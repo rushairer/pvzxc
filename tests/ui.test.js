@@ -56,6 +56,12 @@ test('the real browser entrypoint supports endless start, save, load and catalog
   el('recipeSearch').value='西瓜';
   el('recipeSearch').fire('input');
   assert.ok(el('recipeGrid').children.filter(c=>!c.hidden).length>0);
+  el('recipeSearch').value='';el('recipeSearch').fire('input');
+  el('recipeGrid').children[0].children[2].fire('click');
+  assert.equal(el('guideOverlay').classList.contains('is-visible'),false);
+  el('game').fire('pointerdown',{clientX:260,clientY:260});
+  el('quickSave').fire('click');
+  assert.equal(JSON.parse(store.get('pvzxc.endless.v1.slot1')).state.grid[0][0].id,'repeater');
   el('closeGuide').fire('click');
   assert.equal(el('guideOverlay').classList.contains('is-visible'),false);
  }finally{
