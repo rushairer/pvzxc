@@ -5,7 +5,10 @@ import {BOARD,LEVELS,newGame,plantHere,collectAt,spawn,tick} from '../src/engine
 import {drawScene} from '../src/render.js';
 
 test('six day plants plus ten expansion plants have defined stats',()=>{
- assert.equal(SEEDS.length,16);
+ assert.equal(SEEDS.length,29);
+ assert.equal(getPlant('doom').instant.kind,'doom');
+ assert.equal(getPlant('magnet').magnet.range,3);
+ assert.equal(getPlant('pumpkin').pumpkin,true);
  assert.equal(getPlant('puff').cost,0);
  assert.equal(getPlant('ice-shroom').instant.kind,'ice');
  assert.equal(getPlant('threepeater').triple,true);
@@ -25,7 +28,7 @@ test('six day plants plus ten expansion plants have defined stats',()=>{
 test('fusion graph has no ambiguous input combinations',()=>{
  const keys=RECIPES.map(r=>r.ordered?r.inputs.join('>'):fusionKey(...r.inputs));
  assert.equal(keys.length,new Set(keys).size);
- assert.equal(RECIPES.length,46);
+ assert.equal(RECIPES.length,68);
  for(const recipe of RECIPES){
   const [a,b]=recipe.inputs;
   assert.equal(recipeFor(a,b)?.id,recipe.id);
@@ -44,8 +47,8 @@ test('advancing fusion does not mutate base plant catalog',()=>{
 });
 test('levels unlock 6 through 16 seeds, free mode unlocks all',()=>{
  assert.equal(unlockedSeeds(1).length,6);
- assert.equal(unlockedSeeds(5).length,16);
- assert.equal(unlockedSeeds(1,true).length,16);
+ assert.equal(unlockedSeeds(5).length,29);
+ assert.equal(unlockedSeeds(1,true).length,29);
  assert.equal(LEVELS.length,5);
 });
 test('planting and repeated plant fusion consume correct sun',()=>{
@@ -187,9 +190,68 @@ test('jalapeno row fire only affects its own lane',()=>{
  assert.equal(s.zombies[0].hp,untouched);
 });
 
-test('free play supports 3 pages and every seed stays selectable',()=>{
+test('free play supports 5 pages and every seed stays selectable',()=>{
  const s=newGame(5,true);
- assert.equal(s.decks.length,16);
- assert.equal(Math.ceil(s.decks.length/7),3);
+ assert.equal(s.decks.length,29);
+ assert.equal(Math.ceil(s.decks.length/7),5);
  for(const item of s.decks){const fresh=newGame(5,true);fresh.sun=999;assert.ok(plantHere(fresh,0,0,item.id),item.id);}
+});
+
+test('pumpkin covers an existing plant and absorbs zombie bites',()=>{
+ const s=newGame(5,true);s.sun=999;
+ assert.equal(plantHere(s,2,3,'pea'),true);
+ assert.equal(plantHere(s,2,3,'pumpkin'),true);
+ assert.equal(s.grid[2][3].cover,4000);
+ const x=BOARD.x+(3.5)*BOARD.cw;
+ spawn(s,2,'normal',x);s.spawnTimer=999;s.skyTimer=999;
+ const oldHp=s.grid[2][3].hp;
+ for(let i=0;i<12;i++)tick(s,.05);
+ assert.equal(s.grid[2][3].hp,oldHp);
+ assert.ok(s.grid[2][3].cover<4000);
+});
+test('magnet pulls the armor off bucket zombies',()=>{
+ const s=newGame(5,true);s.sun=999;
+ plantHere(s,2,3,'magnet');spawn(s,2,'bucket',BOARD.x+5*BOARD.cw);
+ s.spawnTimer=999;s.skyTimer=999;
+ for(let i=0;i<50;i++)tick(s,.05);
+ const z=s.zombies[0];
+ assert.equal(z.armor,0);assert.equal(z.type,'normal');assert.ok(z.hp<1370);
+});
+test('hypno converts a biting zombie into a defender',()=>{
+ const s=newGame(5,true);s.sun=999;
+ plantHere(s,2,3,'hypno');spawn(s,2,'normal',BOARD.x+3.5*BOARD.cw);
+ s.spawnTimer=999;s.skyTimer=999;
+ for(let i=0;i<12;i++)tick(s,.05);
+ assert.equal(s.zombies[0].charmed,true);
+});
+test('doom creates a crater and prevents planting in its cell',()=>{
+ const s=newGame(5,true);s.sun=999;
+ plantHere(s,2,3,'doom');s.spawnTimer=999;s.skyTimer=999;
+ for(let i=0;i<24;i++)tick(s,.05);
+ assert.equal(s.grid[2][3],null);assert.equal(s.craters.length,1);
+ assert.equal(plantHere(s,2,3,'pea'),false);
+});
+test('starfruit fires five genuinely directional projectiles',()=>{
+ const s=newGame(5,true);s.sun=999;
+ plantHere(s,2,3,'starfruit');spawn(s,2,'normal',1190);
+ s.spawnTimer=999;s.skyTimer=999;
+ for(let i=0;i<15;i++)tick(s,.05);
+ assert.ok(s.bullets.some(b=>b.star&&b.vy<0));
+ assert.ok(s.bullets.some(b=>b.star&&b.vy>0));
+ assert.ok(s.bullets.some(b=>b.star&&b.speed<0));
+});
+test('blover clears airborne zombies while preserving grounded enemies',()=>{
+ const s=newGame(5,true);s.sun=999;
+ spawn(s,0,'balloon',1100);spawn(s,1,'normal',1100);
+ plantHere(s,2,3,'blover');s.spawnTimer=999;s.skyTimer=999;
+ for(let i=0;i<25;i++)tick(s,.05);
+ assert.ok(s.zombies.every(z=>z.type!=='balloon'));
+ assert.ok(s.zombies.some(z=>z.type==='normal'));
+});
+test('garlic redirects zombies to another lane',()=>{
+ const s=newGame(5,true);s.sun=999;
+ plantHere(s,2,3,'garlic');spawn(s,2,'normal',BOARD.x+3.5*BOARD.cw);
+ s.spawnTimer=999;s.skyTimer=999;
+ for(let i=0;i<12;i++)tick(s,.05);
+ assert.notEqual(s.zombies[0].row,2);
 });
