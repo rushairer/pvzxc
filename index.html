@@ -1,59 +1,77 @@
 <!doctype html>
 <html lang="zh-CN">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <meta name="theme-color" content="#182e1d">
-  <meta name="description" content="融合花园：一个可直接在浏览器中游玩的原创植物融合塔防实验项目。">
-  <title>融合花园 · PvZXC</title>
-  <link rel="stylesheet" href="./styles.css">
+ <meta charset="UTF-8">
+ <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+ <meta name="theme-color" content="#172b20">
+ <meta name="description" content="融合花园：49种经典植物、26类僵尸、无尽融合玩法及本地多槽位存档。">
+ <title>融合花园 · 无尽融合</title>
+ <link rel="stylesheet" href="./styles.css">
 </head>
 <body>
-  <div class="app-shell">
-    <header class="site-head">
-      <a class="wordmark" href="./" aria-label="融合花园首页"><span class="mark-icon">✿</span><span>融合花园 <em>PVZXC</em></span></a>
-      <div class="header-right"><span class="version">WEB · ALPHA 0.3</span><button class="plain-button" id="headerHelp" type="button">玩法说明 <span aria-hidden="true">?</span></button></div>
-    </header>
-    <main>
-      <div class="game-frame">
-        <canvas id="game" width="1440" height="820" aria-label="融合花园战斗场景：选择植物卡牌，点击草坪种植，将植物种在另一株植物上进行融合。">您的浏览器不支持 Canvas。</canvas>
-        <div class="overlay is-visible" id="mainOverlay" role="dialog" aria-modal="true" aria-labelledby="overlayTitle">
-          <div class="menu-card">
-            <div class="menu-kicker">PLANT FUSION · STRATEGY DEFENSE</div>
-            <div class="menu-flower" aria-hidden="true">✿</div>
-            <h1 id="overlayTitle">融合花园</h1>
-            <p id="overlayDescription">按原作白天草坪规则收集阳光、守住五路，将植物放到已有植物上触发融合，还可以继续升级。</p>
-            <div class="menu-actions">
-              <button class="action-button primary" id="primaryAction" type="button">▶ 开始冒险</button>
-              <button class="action-button secondary" id="secondaryAction" type="button">查看融合图鉴</button><button class="action-button secondary free-play" id="freeAction" type="button">✦ 自由模式 · 全植物解锁</button>
-            </div>
-            <div class="menu-tip">画质增强 · 29 种基础植物 · 68 条融合配方 · 无需安装</div>
-          </div>
-        </div>
-        <div class="overlay guide-overlay" id="guideOverlay" role="dialog" aria-modal="true" aria-labelledby="guideTitle" aria-hidden="true">
-          <div class="guide-card">
-            <header class="guide-head"><div><span class="menu-kicker">GAME GUIDE</span><h2 id="guideTitle">融合图鉴与操作</h2></div><button class="close-button" id="closeGuide" type="button" aria-label="关闭图鉴">×</button></header>
-            <div class="guide-intro">选择上方卡牌，再点击草坪种植；选择另一张卡牌，点击已有植物即可融合。击败所有波次获得胜利。</div>
-            <div class="shortcuts"><span>数字 1–7：选植物</span><span>← / →：翻卡页</span><span>0 / X：铲子</span><span>空格：暂停</span><span>Esc：取消选择</span><span>右键：取消选择</span></div>
-            <div class="guide-section-title">当前已实现的 68 条融合配方</div>
-            <div class="recipe-searchbar">
-              <label for="recipeSearch">查找融合</label>
-              <input id="recipeSearch" type="search" placeholder="输入植物名或效果，如：寒冰、磁力、玉米" autocomplete="off">
-              <span id="recipeCount" aria-live="polite">68 条</span>
-            </div>
-            <div class="recipe-grid" id="recipeGrid"></div>
-            <div class="guide-foot">当前含29种基础植物、68条融合路径。部分融合特性属于可玩近似，不代表原版数值完全一致。</div>
-          </div>
-        </div>
-        <div class="rotate-tip">横屏体验更好 · 请旋转设备</div>
+ <div class="app-shell">
+  <header class="site-head">
+   <a class="wordmark" href="./"><span class="mark-icon">✿</span><span>融合花园 <em>ENDLESS FUSION</em></span></a>
+   <div class="header-right"><span class="version">WEB · ALPHA 0.4</span><button class="plain-button" id="headerHelp" type="button">图鉴与说明 <span aria-hidden="true">?</span></button></div>
+  </header>
+  <main>
+   <div class="game-frame">
+    <canvas id="game" width="1440" height="820" aria-label="无尽融合塔防战场，49种植物和所有融合配方从开始便可使用">当前浏览器不支持Canvas</canvas>
+    <div class="overlay is-visible" id="mainOverlay" role="dialog" aria-modal="true" aria-labelledby="overlayTitle">
+     <div class="menu-card">
+      <div class="menu-kicker">UNLIMITED WAVES · FUSION DEFENSE</div>
+      <div class="menu-flower" aria-hidden="true">✿</div>
+      <h1 id="overlayTitle">融合无尽</h1>
+      <p id="overlayDescription">49种经典植物、26种僵尸、115条融合配方。没有关卡和解锁门槛，只看你能守住多少波。</p>
+      <div class="menu-actions">
+       <button class="action-button primary" id="primaryAction" type="button">▶ 新建无尽战场</button>
+       <button class="action-button secondary free-play" id="freeAction" type="button">↻ 继续自动存档</button>
+       <button class="action-button secondary" id="loadAction" type="button">▣ 读取 / 管理存档</button>
+       <button class="action-button secondary" id="secondaryAction" type="button">✦ 融合图鉴</button>
       </div>
-      <div class="below-game">
-        <div class="play-instruction"><strong>玩法：</strong>上方选种子 → 点击草格种植或融合；右侧种子卡翻页可选择29种植物；点击掉落阳光收集。</div>
-        <span class="copyright-note">独立学习项目；画面与程序为原创实现，非官方游戏。</span>
+      <div class="menu-tip">自动存档 + 3个手动槽位 · 数据保存在当前浏览器</div>
+     </div>
+    </div>
+    <div class="overlay guide-overlay" id="guideOverlay" role="dialog" aria-modal="true" aria-labelledby="guideTitle" aria-hidden="true">
+     <div class="guide-card">
+      <header class="guide-head"><div><span class="menu-kicker">FUSION ALMANAC</span><h2 id="guideTitle">全部融合配方</h2></div><button class="close-button" id="closeGuide" type="button" aria-label="关闭图鉴">×</button></header>
+      <div class="guide-intro">所有49张种子卡、配方都已解锁。选择上方卡牌种植；对已经种植的植物使用另一张卡可继续融合。独立画面与部分特殊机制属于原创近似实现。</div>
+      <div class="shortcuts"><span>1–7：本页植物</span><span>← / →：翻页</span><span>0 / X：铲子</span><span>空格：暂停</span><span>Esc / 右键：取消</span><span>Ctrl/Cmd + S：快速保存</span></div>
+      <div class="guide-section-title">融合配方检索</div>
+      <div class="recipe-searchbar">
+       <label for="recipeSearch">搜索</label>
+       <input id="recipeSearch" type="search" placeholder="搜索植物名称、融合名字或特性" autocomplete="off">
+       <span id="recipeCount" aria-live="polite">115 条</span>
       </div>
-    </main>
-    <footer class="site-footer"><span>PVZXC · Built with Canvas 2D</span><a href="https://github.com/rushairer/pvzxc" target="_blank" rel="noopener noreferrer">GitHub 源码 ↗</a></footer>
-  </div>
-  <script type="module" src="./src/main.js"></script>
+      <div class="recipe-grid" id="recipeGrid"></div>
+      <div class="guide-foot">全部原版基础植物和僵尸类型均已列入可玩名录，但部分原作特殊机制、画面、碰撞与数值仍是近似，不宣称原版1:1完成。</div>
+     </div>
+    </div>
+    <div class="overlay save-overlay" id="saveOverlay" role="dialog" aria-modal="true" aria-labelledby="saveTitle" aria-hidden="true">
+     <div class="save-card">
+      <header class="guide-head">
+       <div><span class="menu-kicker">LOCAL SAVE MANAGER</span><h2 id="saveTitle">无尽模式存档</h2></div>
+       <button class="close-button" id="closeSave" type="button" aria-label="关闭存档管理">×</button>
+      </header>
+      <p class="save-hint">自动存档每15秒更新，也会在离开游戏页面时保存。手动槽位可以分别保存和载入；存档仅保存在当前浏览器。</p>
+      <div id="saveSlots" class="save-slots" aria-live="polite"></div>
+      <p id="saveMessage" class="save-message" role="status"></p>
+     </div>
+    </div>
+    <div class="rotate-tip">横屏游戏体验更好</div>
+   </div>
+   <div class="below-game">
+    <div class="play-instruction"><strong>无尽模式</strong>：49张植物卡、115种融合无需解锁；翻页选卡、融合抵御不断增强的尸潮。</div>
+    <div class="game-tools">
+     <button type="button" id="quickSave" class="tool-button">保存游戏</button>
+     <button type="button" id="quickLoad" class="tool-button">读取存档</button>
+     <button type="button" id="toMenu" class="tool-button">主菜单</button>
+    </div>
+   </div>
+   <div class="under-note"><span id="saveIndicator" aria-live="polite">所有游戏数据保存在浏览器本地</span><span>原创程序绘图 · 非官方版本 · 玩法仍在逐步完善</span></div>
+  </main>
+  <footer class="site-footer"><span>PVZXC · Endless Fusion · Canvas 2D</span><a href="https://github.com/rushairer/pvzxc" target="_blank" rel="noopener noreferrer">GitHub 源码 ↗</a></footer>
+ </div>
+ <script type="module" src="./src/main.js"></script>
 </body>
 </html>
