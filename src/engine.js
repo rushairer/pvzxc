@@ -434,8 +434,7 @@ function advanceZombies(s,dt){
 }
 function spawnWave(s){
  const wave=s.wave;
- const count=Math.min(3,1+Math.floor(wave/4));
- const type=wave%10===0&&s.spawnCount>0&&s.spawnCount%12===0?'zomboss':pickEndlessEnemy(wave);
+ const type=pickEndlessEnemy(wave);
  const row=Math.floor(rnd(0,5));
  spawn(s,row,type);
  if(wave>=6&&Math.random()<Math.min(.48,wave*.025)){
@@ -445,9 +444,6 @@ function spawnWave(s){
  s.spawnCount++;
  const speedup=ENDLESS.initialSpawn*Math.pow(.97,Math.min(wave,90));
  s.spawnTimer=Math.max(ENDLESS.minimumSpawn,speedup)+rnd(-.2,1.1);
- if(wave%10===0&&s.spawnCount%12===0){
-  spawn(s,row,'zomboss',1540);s.spawnTimer+=2;
- }
 }
 export function tick(s,dt){
  if(!s||s.phase!=='playing'||s.paused)return;
@@ -467,6 +463,7 @@ export function tick(s,dt){
   message(s,s.wave%10===0?'首领来袭！ 第 '+s.wave+' 波':'无尽尸潮 · 第 '+s.wave+' 波',3.5);
   s.shake=6;
   for(let r=0;r<5;r++)spawn(s,r,s.wave%10===0?'football':'flag',1470+r*26);
+  if(s.wave%10===0)spawn(s,Math.floor(rnd(0,5)),'zomboss',1540);
   if(s.wave%4===0&&s.graves.length<6){
    const empties=[];
    for(let r=0;r<5;r++)for(let c=5;c<9;c++)
