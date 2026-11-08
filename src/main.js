@@ -1,4 +1,4 @@
-import {SEEDS,RECIPES,getPlant,recipeFor} from './model.js';
+import {SEEDS,RECIPES,getPlant,recipeFor,costFor} from './model.js';
 import {BOARD,ENDLESS,ZOMBIE_IDS,newGame,plantHere,collectAt,tick} from './engine.js';
 import {drawScene} from './render.js';
 import {saveGame,loadGame,listSaves,deleteSave} from './save.js';
@@ -138,8 +138,17 @@ for(const recipe of RECIPES){
  label.textContent=recipe.inputs.map(id=>getPlant(id)?.name||id).join(' + ')+' → '+recipe.name;
  const detail=document.createElement('small');detail.textContent=recipe.desc;
  if(recipe.approximate){const flag=document.createElement('span');flag.className='approx-flag';flag.textContent='近似';label.append(' ',flag);}
+ const use=document.createElement('button');
+ use.type='button';use.className='recipe-use';
+ use.textContent='选用融合植物 · ☀ '+costFor(recipe.id);
+ use.addEventListener('click',()=>{
+  if(!game||scene!=='playing'){$('saveIndicator').textContent='请先开始无尽游戏，然后从图鉴选用融合植物';return;}
+  game.quickRecipe=recipe.id;game.selected=recipe.id;game.shovel=false;
+  game.message='已选用：'+recipe.name+' · 花费 '+costFor(recipe.id)+' 阳光';game.messageLeft=6;
+  closeGuide();tone(840);
+ });
  card.dataset.search=[recipe.name,recipe.desc,...recipe.inputs.map(id=>getPlant(id)?.name||id)].join(' ').toLocaleLowerCase('zh-CN');
- card.append(label,detail);recipeGrid.append(card);
+ card.append(label,detail,use);recipeGrid.append(card);
 }
 $('recipeCount').textContent=RECIPES.length+' 条';
 $('recipeSearch').addEventListener('input',()=>{
