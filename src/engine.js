@@ -11,7 +11,9 @@ export const ZOMBIE_TYPES={
   normal:{name:'普通僵尸',hp:270,speed:19,attack:100,period:1.0},
   cone:{name:'路障僵尸',hp:640,speed:19,attack:100,period:1.0},
   bucket:{name:'铁桶僵尸',hp:1370,speed:19,attack:100,period:1.0},
-  runner:{name:'路障快跑僵尸',hp:270,speed:30,attack:100,period:1.0}
+  runner:{name:'路障快跑僵尸',hp:270,speed:30,attack:100,period:1.0},
+  balloon:{name:'气球僵尸',hp:270,speed:24,attack:100,period:1.0,airborne:true},
+  newspaper:{name:'读报僵尸',hp:470,speed:17,attack:100,period:1.0}
 };
 let seedIndex=1;
 function rnd(a,b){return a+Math.random()*(b-a);}
@@ -19,6 +21,7 @@ export function newGame(level=1,freeMode=false){
  const def=LEVELS[Math.max(0,Math.min(LEVELS.length-1,level-1))];
  return {level,def,freeMode,phase:'playing',paused:false,t:0,sun:freeMode?1000:def.initialSun,
   grid:Array.from({length:5},()=>Array(9).fill(null)), zombies:[],bullets:[],suns:[],effects:[],mowers:Array(5).fill(true),
+  craters:[],coins:0,screenFlash:0,windLeft:0,
   decks:unlockedSeeds(level,freeMode),cooldowns:{},selected:null,shovel:false,hover:null,page:0,
   kills:0,spawnCount:0,spawnTimer:9,skyTimer:8,wave:1,flags:0,message:def.intro,messageLeft:6,
   shake:0,uid:0,winTimer:0,totalSuns:0,solved:new Set(),pendingGameOver:false};
@@ -36,6 +39,7 @@ export function plantHere(s,row,col,id){
  if(s.phase!=='playing'||s.paused)return false;
  if(row<0||row>4||col<0||col>8)return false;
  const cur=s.grid[row][col];
+ if(s.craters.some(k=>k.row===row&&k.col===col&&k.life>0)){message(s,'弹坑尚未恢复，无法种植！');return false;}
  if(s.shovel){
    if(!cur)return false;
    s.grid[row][col]=null;s.shovel=false;message(s,'植物已移除');return true;
@@ -45,6 +49,13 @@ export function plantHere(s,row,col,id){
  if(s.cooldowns[id]>0){message(s,'植物尚在冷却');return false;}
  if(s.sun<item.cost){message(s,'阳光不足');return false;}
  const fusion=cur?recipeFor(cur.id,id):null;
+ if(id==='pumpkin'&&cur){
+   const max=4000;
+   if(cur.cover>=max){message(s,'南瓜护甲已经完好');return false;}
+   cur.cover=max;s.sun-=item.cost;s.cooldowns[id]=item.cooldown;
+   const {x,y}=center(row,col);particles(s,x,y,'#ffba6c',18);
+   message(s,'南瓜护甲装配完成');return true;
+ }
  if(cur?.id==='puff'&&id==='puff'&&cur.stacks<3){
   cur.stacks++;s.cooldowns[id]=item.cooldown;message(s,'小喷菇密植 '+cur.stacks+'/3');return true;
  }
@@ -73,6 +84,7 @@ export function collectAt(s,x,y){
 export function spawn(s,row,type='normal',x=1418){
  const spec=ZOMBIE_TYPES[type]||ZOMBIE_TYPES.normal;
  s.zombies.push({id:s.uid++,row,x,y:BOARD.y+(row+.55)*BOARD.ch,type,hp:spec.hp,maxHp:spec.hp,speed:spec.speed,
+  airborne:!!spec.airborne,charmed:false,armor:type==='bucket'?1100:type==='cone'?370:0,
   attack:spec.attack,period:spec.period,biting:0,slow:0,burn:0,dead:false,anim:rnd(0,6)});
 }
 function rowFire(s,row,damage){
@@ -100,7 +112,9 @@ function shoot(s,p,spec,row,col){
    damage:spec.damage,life:4.6,speed:spec.lob?290:325,icon:spec.icon,
    through:!!(spec.pierce||spec.spray),range:spec.range?spec.range*BOARD.cw:Infinity,
    freezeHit:spec.freezeHit||0,burn:spec.burn||0,spore:!!spec.spore,
-   hit:new Set(),torchCells:new Set(),splash:spec.splash,lob:!!spec.lob,
+   hit:new Set(),torchCells:new Set(),splash:spec.splash,lob:!!spec.lob,antiAir:!!spec.antiAir,
+   butterChance:spec.butterChance||0,butterDamage:spec.butterDamage||0,butterStun:spec.butterStun||0,
+   poison:spec.poison||0,
    hitSun:spec.hitSunEvery?{owner:p,each:spec.hitSunEvery}:null});
  }
  if(spec.backShot)s.bullets.push({x:x-26,y:y-20,row,damage:20,life:3.8,speed:-280,icon:'pea',hit:new Set()});
