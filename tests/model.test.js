@@ -170,3 +170,23 @@ test('render all 26 enemy visual classes without exceptions',()=>{
  for(let i=0;i<ZOMBIE_IDS.length;i++)spawn(s,i%5,ZOMBIE_IDS[i],600+i*16);
  assert.doesNotThrow(()=>drawScene(ctx,s,renderOptions));
 });
+
+test('all 115 recipes are directly craftable in unlocked endless mode',()=>{
+ for(const recipe of RECIPES){
+  const s=generous();s.quickRecipe=recipe.id;s.selected=recipe.id;
+  assert.equal(plantHere(s,2,2,recipe.id),true,recipe.id);
+  assert.equal(s.grid[2][2].id,recipe.id);
+  assert.ok(s.sun<100000);
+ }
+});
+test('sun-shooter bullets reconnect to their exact plant after saving',()=>{
+ const s=generous();plantHere(s,2,1,'pea');
+ s.cooldowns.sun=0;plantHere(s,2,1,'sun');
+ spawn(s,2,'normal',1100);s.spawnTimer=1e6;s.skyTimer=1e6;step(s,.9);
+ const shot=s.bullets.find(b=>b.hitSun?.owner);
+ assert.ok(shot,'expected solar projectile');
+ const restored=restoreSnapshot(makeSnapshot(s));
+ const match=restored.bullets.find(b=>b.hitSun?.owner);
+ assert.ok(match);
+ assert.equal(match.hitSun.owner,restored.grid[2][1]);
+});
