@@ -7,7 +7,7 @@ test('the real browser entrypoint supports endless start, save, load and catalog
   const classes=new Set(),events=new Map();
   const node={
    name,children:[],dataset:{},hidden:false,disabled:false,textContent:'',
-   value:'',style:{},attributes:{},
+   value:'',style:{},attributes:{},scrollTop:0,
    classList:{add:k=>classes.add(k),remove:k=>classes.delete(k),contains:k=>classes.has(k)},
    addEventListener:(type,cb)=>events.set(type,cb),
    fire:(type,arg={})=>{const fn=events.get(type);assert.ok(fn,'missing handler '+name+'.'+type);return fn({target:node,preventDefault(){},...arg});},
@@ -40,7 +40,24 @@ test('the real browser entrypoint supports endless start, save, load and catalog
   assert.equal(el('deckSelected').children.length,10);
   assert.equal(el('deckConfirm').disabled,true);
   assert.equal(el('deckLibrary').children.length,302);
+  // Picking or removing a card must preserve the same scrollable list and DOM nodes.
+  const library=el('deckLibrary');
+  library.scrollTop=1180;
+  const farCard=library.children[140],firstCard=library.children[0];
+  assert.match(farCard.children[1].textContent,/☀ .* 阳光/);
+  farCard.fire('click');
+  assert.equal(library.scrollTop,1180);
+  assert.equal(library.children[140],farCard);
+  assert.equal(library.children[0],firstCard);
+  assert.equal(farCard.attributes['aria-pressed'],'true');
+  assert.match(el('deckSelected').children[0].children[1].textContent,/☀ .* 阳光/);
+  farCard.fire('click');
+  assert.equal(library.scrollTop,1180);
+  assert.equal(library.children[140],farCard);
+  assert.equal(farCard.attributes['aria-pressed'],'false');
   el('deckDefault').fire('click');
+  assert.equal(library.scrollTop,1180);
+  assert.equal(library.children[140],farCard);
   assert.equal(el('deckConfirm').disabled,false);
   el('deckConfirm').fire('click');
   assert.equal(el('mainOverlay').classList.contains('is-visible'),false);
