@@ -26,7 +26,7 @@ function tone(freq=440,duration=.08){
   oscillator.frequency.setValueAtTime(freq,audio.currentTime);
   gain.gain.setValueAtTime(.022,audio.currentTime);
   gain.gain.exponentialRampToValueAtTime(.001,audio.currentTime+duration);
-  oscillator.connect(gain);gain.connect(audio.destination);gain.connect(audio.destination);
+  oscillator.connect(gain);gain.connect(audio.destination);
   oscillator.start();oscillator.stop(audio.currentTime+duration);
  }catch{}
 }
@@ -91,7 +91,9 @@ function readSave(slot){
 function slotName(slot){return slot==='auto'?'自动存档':'手动存档 '+slot.replace('slot','');}
 function renderSlots(){
  const wrapper=$('saveSlots');wrapper.replaceChildren();
- const slots=listSaves();
+ let slots;
+ try{slots=listSaves();}
+ catch(error){saveMessage('浏览器禁止了本地存储，请检查隐私设置：'+error.message);return;}
  for(const slot of slots){
   const item=document.createElement('div');item.className='save-slot';
   const details=document.createElement('div');details.className='save-slot-info';
