@@ -126,10 +126,10 @@ function shoot(s,p,spec,row,col){
    freezeHit:spec.freezeHit||0,burn:spec.burn||0,spore:!!spec.spore,
    hit:new Set(),torchCells:new Set(),splash:spec.splash,lob:!!spec.lob,antiAir:!!spec.antiAir,
    butterChance:spec.butterChance||0,butterDamage:spec.butterDamage||0,butterStun:spec.butterStun||0,
-   poison:spec.poison||0,
+   poison:spec.poison||0,charmChance:spec.charmChance||0,homing:!!spec.homing,
    hitSun:spec.hitSunEvery?{owner:p,each:spec.hitSunEvery}:null});
  }
- if(spec.backShot)s.bullets.push({x:x-26,y:y-20,row,damage:20,life:3.8,speed:-280,icon:'pea',hit:new Set()});
+ if(spec.backShot)s.bullets.push({x:x-26,y:y-20,row,damage:20,life:3.8,speed:-280,icon:'pea',hit:new Set(),torchCells:new Set(),originX:x,range:Infinity});
 }
 function fireStars(s,p,spec,row,col){
  const {x,y}=center(row,col);
@@ -311,7 +311,7 @@ function updatePlant(s,p,r,c,dt){
   if(p.fireTimer<=0){
    const afraid=spec.scaredy&&s.zombies.some(z=>!z.charmed&&z.hp>0&&
      Math.abs(z.row-r)<=1&&Math.abs(z.x-x)<BOARD.cw*1.5);
-   const target=spec.star
+   const target=spec.star||spec.homing
     ? s.zombies.some(z=>z.hp>0&&!z.charmed)
     : s.zombies.some(z=>!z.dead&&!z.charmed&&
       (spec.triple?Math.abs(z.row-r)<=1:z.row===r)&&
@@ -327,25 +327,34 @@ function updatePlant(s,p,r,c,dt){
 }
 function advanceProjectiles(s,dt){
  for(const b of s.bullets){
-  b.x+=b.speed*dt;
+  if(b.homing){
+   const target=s.zombies.filter(z=>z.hp>0&&!z.charmed).sort((a,bz)=>Math.hypot(a.x-b.x,a.y-b.y)-Math.hypot(bz.x-b.x,bz.y-b.y))[0];
+   if(target){
+    const d=Math.hypot(target.x-b.x,target.y-40-b.y)||1;
+    b.x+=(target.x-b.x)/d*370*dt;
+    b.y+=(target.y-40-b.y)/d*370*dt;
+   }else b.x+=b.speed*dt;
+  }else b.x+=b.speed*dt;
   if(b.star)b.y+=(b.vy||0)*dt;
   b.life-=dt;
   if(b.range!==undefined&&Math.abs(b.x-b.originX)>b.range)b.life=-1;
   if(b.y<BOARD.y-60||b.y>BOARD.y+BOARD.h+60)b.life=-1;
   if(b.life<=0)continue;
-  for(let c=0;c<BOARD.cols&&!b.star;c++){
+  for(let c=0;c<BOARD.cols&&!b.star&&!b.homing;c++){
    const p=s.grid[b.row][c],spec=p&&getPlant(p.id),tx=BOARD.x+(c+.5)*BOARD.cw;
    if(!spec?.torchBonus||b.torchCells.has(c)||b.speed<=0||b.icon.includes('ice'))continue;
    if(b.x>=tx-7&&b.x<=tx+22){b.torchCells.add(c);b.damage+=spec.torchBonus;
      b.splash??={damage:Math.round(b.damage*.25),radius:.6};b.icon='fire-pea';particles(s,b.x,b.y,'#ffb84f',6);}
   }
   for(const z of s.zombies){
-   if(z.dead||z.hp<=0||z.charmed||(!b.star&&z.row!==b.row)||b.hit.has(z.id))continue;
-   if(z.airborne&&!b.antiAir&&!b.star)continue;
-   const hit=b.star?Math.hypot(z.x-b.x,(z.y-38)-b.y)<35
+   if(z.dead||z.hp<=0||z.charmed||(!b.star&&!b.homing&&z.row!==b.row)||b.hit.has(z.id))continue;
+   if(z.airborne&&!b.antiAir&&!b.star&&!b.homing)continue;
+   const hit=b.star||b.homing?Math.hypot(z.x-b.x,(z.y-38)-b.y)<35
     :Math.abs(z.x-b.x)<22&&Math.abs(z.y-b.y)<58;
    if(!hit)continue;
    b.hit.add(z.id);z.hp-=b.damage;
+   if(z.armor>0)z.armor=Math.max(0,z.armor-b.damage);
+   if(b.charmChance&&Math.random()<b.charmChance)charmZombie(s,z);
    if(b.butterChance&&Math.random()<b.butterChance){z.hp-=b.butterDamage;z.frozen=Math.max(z.frozen||0,b.butterStun);z.butter=Math.max(z.butter||0,b.butterStun);particles(s,z.x,z.y-100,'#ffe883',12);}
    if(b.poison)z.poison=Math.max(z.poison||0,b.poison);
    if(b.freezeHit){z.slow=Math.max(z.slow,3.5);z.frost=(z.frost||0)+b.freezeHit;if(z.frost>=100){z.frozen=Math.max(z.frozen||0,2);z.frost=0;}}
