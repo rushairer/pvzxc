@@ -1,4 +1,5 @@
-// The first six day plants, fusion names and baseline values follow the PvZ Fusion Wiki.
+import { EXTRA_SEEDS, EXTRA_RECIPES } from './expansion.js';
+// Base/day plants and additional seasonal plants are separated for maintainability.
 // Design references: docs/REFERENCE.md. Further exotic classes deliberately omitted.
 export const SEEDS = Object.freeze([
   {id:'pea',name:'豌豆射手',icon:'pea',cost:100,cooldown:7.5,hp:300,damage:20,interval:1.5,shots:1,desc:'每1.5秒发射20伤害豌豆。'},
@@ -6,7 +7,8 @@ export const SEEDS = Object.freeze([
   {id:'cherry',name:'樱桃炸弹',icon:'cherry',cost:150,cooldown:50,hp:300,explosion:{damage:1800,radius:1.48,trigger:'fuse'},desc:'短暂引爆，伤害1800、半径1.48格。'},
   {id:'wall',name:'坚果',icon:'wall',cost:50,cooldown:30,hp:4000,desc:'4000韧性的防御植物。'},
   {id:'potato',name:'土豆雷',icon:'potato',cost:25,cooldown:30,hp:300,mine:{arm:16,damage:1800,radius:.74},desc:'15–17秒武装，碰到僵尸后爆炸。'},
-  {id:'chomper',name:'大嘴花',icon:'chomper',cost:150,cooldown:7.5,hp:300,chomp:{range:1.22,digest:30},desc:'吞噬前方僵尸，消化需约30秒。'}
+  {id:'chomper',name:'大嘴花',icon:'chomper',cost:150,cooldown:7.5,hp:300,chomp:{range:1.22,digest:30},desc:'吞噬前方僵尸，消化需约30秒。'},
+  ...EXTRA_SEEDS
 ]);
 
 function f(id,name,inputs,data,desc){
@@ -34,16 +36,18 @@ export const RECIPES = Object.freeze([
   f('super-cherry','超级樱桃射手',['cherry-shooter','cherry'],{icon:'super-cherry',hp:300,damage:300,interval:3,splash:{radius:1,damage:300},cherryRecharge:.85},'每3秒发射一颗300伤害的范围爆炸樱桃。'),
   f('cherry-repeater','樱桃双发射手',['repeater','cherry'],{icon:'cherry-pea',hp:300,damage:60,interval:1.5,shots:2},'发射2颗樱桃子弹，每颗60伤害。'),
   f('split-pea','裂荚射手',['repeater','pea'],{icon:'pea',hp:300,damage:20,interval:1.5,shots:2,backShot:true},'向前双发，并能向后射击。'),
-  f('gatling-pea','机枪射手',['repeater','repeater'],{icon:'pea',hp:300,damage:20,interval:1.5,shots:4},'每轮连发4颗豌豆。')
+  f('gatling-pea','机枪射手',['repeater','repeater'],{icon:'pea',hp:300,damage:20,interval:1.5,shots:4},'每轮连发4颗豌豆。'),
+  ...EXTRA_RECIPES
 ]);
 export function fusionKey(a,b){return [a,b].sort().join('+');}
-const recipes=new Map(RECIPES.map(recipe=>[fusionKey(...recipe.inputs),recipe]));
+const recipes=new Map(RECIPES.filter(recipe=>!recipe.ordered).map(recipe=>[fusionKey(...recipe.inputs),recipe]));
+const orderedRecipes=new Map(RECIPES.filter(recipe=>recipe.ordered).map(recipe=>[recipe.inputs.join('>'),recipe]));
 const plantMap=new Map([...SEEDS,...RECIPES].map(x=>[x.id,x]));
 export function getPlant(id){return plantMap.get(id)||null;}
 export function recipeFor(first,second){
   const a=Array.isArray(first)?(first.length===1?first[0]:null):first;
   if(!a||!second)return null;
-  return recipes.get(fusionKey(a,second))||null;
+  return orderedRecipes.get(a+'>'+second)||recipes.get(fusionKey(a,second))||null;
 }
 export function costFor(id){return getPlant(id)?.cost||0;}
 export function createPlant(source,parts){
@@ -52,8 +56,9 @@ export function createPlant(source,parts){
   return {id:spec.id,name:spec.name,icon:spec.icon,parts:parts||[spec.id],
     hp:spec.hp,maxHp:spec.hp,age:0,fireTimer:.65,sunTimer:spec.sun?6:Infinity,
     fuseTimer:spec.explosion?.trigger==='fuse' ? 0.7 : Infinity,
+    instantTimer:spec.instant?.delay??Infinity,stacks:1,squashWindup:0,
     armedAt:spec.mine?.arm||0,digestTimer:0,shotsHit:0,crackPhase:0};
 }
 export function unlockedSeeds(level,freeMode=false){
-  return freeMode?SEEDS:SEEDS.slice(0,Math.min(6,Math.max(2,level+1)));
+  return freeMode?SEEDS:SEEDS.slice(0,Math.min(SEEDS.length,[0,6,9,12,14,16][Math.max(1,Math.min(5,level))]));
 }
