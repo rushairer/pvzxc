@@ -1,82 +1,121 @@
-// Composite art layer for hybrid plants: functional attributes drive visible
-// attached organs, shielding and energy transfers, instead of a generic badge.
+/**
+ * Fusion silhouettes assembled from distinct organic organs, foliage,
+ * element sockets and family-specific heads.
+ *
+ * This is entirely original Canvas artwork: no official sprites are used.
+ */
 import {getPlant} from './model.js';
 const TAU=Math.PI*2;
+const colorFor=id=>{
+ if(/sun|marigold|gold/.test(id))return '#f9c952';
+ if(/ice|snow|winter|frost|polar/.test(id))return '#9eeeff';
+ if(/cherry|doom|fire|torch|blaze|jalapeno/.test(id))return '#f18a52';
+ if(/nut|wall|pumpkin|tall|spikerock/.test(id))return '#d4a579';
+ if(/hypno|magnet|gloom|fume|shroom|scaredy/.test(id))return '#c1a3ee';
+ if(/star|cattail/.test(id))return '#f4db87';
+ return '#98ca6b';
+};
 function oval(c,x,y,rx,ry,fill,a=0){c.beginPath();c.ellipse(x,y,rx,ry,a,0,TAU);c.fillStyle=fill;c.fill();}
-function disk(c,x,y,r,fill){c.beginPath();c.arc(x,y,r,0,TAU);c.fillStyle=fill;c.fill();}
-function line(c,p,col,w=2){c.beginPath();c.moveTo(...p[0]);for(const q of p.slice(1))c.lineTo(...q);c.strokeStyle=col;c.lineWidth=w;c.lineCap='round';c.stroke();}
-function hue(type){
- if(['sun','sunshroom-base','marigold','twin-base'].includes(type))return '#ffdb70';
- if(['ice-shroom','snowpea','wintermelon'].includes(type))return '#96f2fa';
- if(['cherry','jalapeno','doom'].includes(type))return '#ff8f65';
- if(['wall','tallnut','pumpkin','spikerock'].includes(type))return '#bca271';
- if(['hypno','magnet','fume','puff','scaredy'].includes(type))return '#cf9ffa';
- if(['starfruit','cattail','threepeater'].includes(type))return '#f9ec8f';
- return '#a8df82';
+function line(c,coords,color,width=4){
+ c.beginPath();c.moveTo(...coords[0]);for(const p of coords.slice(1))c.lineTo(...p);
+ c.strokeStyle=color;c.lineWidth=width;c.lineCap='round';c.lineJoin='round';c.stroke();
 }
-function emblem(c,id,x,y,angle,time){
- c.save();c.translate(x,y);c.rotate(angle);
- const color=hue(id);
- const t=Math.sin(time*3+x*.12)*2;
- disk(c,0,t,18,color+'2a');
- if(id==='sun'||id.includes('sun')||id==='marigold'){
-  for(let i=0;i<9;i++){let a=i*TAU/9;oval(c,Math.cos(a)*15,Math.sin(a)*15+t,5,9,'#f4cb5c',a);}
-  disk(c,0,t,12,'#e6ac52');
- }else if(id.includes('wall')||id.includes('nut')||id==='pumpkin'){
-  oval(c,0,-2+t,16,19,'#b79063');oval(c,-5,-9+t,7,4,'#e3c08d');
-  disk(c,-5,-1+t,2,'#524132');disk(c,6,-1+t,2,'#524132');
- }else if(id.includes('ice')||id.includes('snow')||id.includes('winter')){
-  for(let i=0;i<6;i++){let a=i*TAU/6;line(c,[[0,t],[Math.cos(a)*17,Math.sin(a)*17+t]],'#d5fbff',3);}
-  disk(c,0,t,6,'#7fc7e7');
- }else if(id.includes('cherry')||id==='jalapeno'||id.includes('fire')){
-  oval(c,-6,0+t,10,13,'#d85645');oval(c,7,3+t,9,11,'#ec8f43');
-  oval(c,1,-15+t,4,8,'#ffda78');
- }else if(id.includes('magnet')){
-  c.beginPath();c.arc(0,t,12,0,Math.PI);c.strokeStyle='#b8d5dd';c.lineWidth=7;c.stroke();
-  line(c,[[-12,t],[-12,-10+t]],'#dc736c',7);line(c,[[12,t],[12,-10+t]],'#dc736c',7);
- }else if(id.includes('star')){
-  let pts=[];for(let i=0;i<10;i++){let a=i*Math.PI/5-Math.PI/2,r=i%2?8:18;pts.push([Math.cos(a)*r,Math.sin(a)*r+t]);}
-  c.beginPath();pts.forEach((p,i)=>i?c.lineTo(...p):c.moveTo(...p));c.closePath();c.fillStyle='#f1d75b';c.fill();
- }else if(id.includes('puff')||id.includes('shroom')||id==='fume'||id==='gloom'){
-  oval(c,0,5+t,8,11,'#e3d6ae');oval(c,0,-7+t,18,13,'#a98dd5');
-  oval(c,-7,-12+t,6,3,'#f4ecff');
- }else if(id.includes('spike')||id==='cactus'){
-  for(let i=-1;i<=1;i++){
-   c.beginPath();c.moveTo(i*12-6,14+t);c.lineTo(i*12,(-19+Math.abs(i)*6)+t);c.lineTo(i*12+6,14+t);c.closePath();
-   c.fillStyle='#8da85d';c.fill();
+function orb(c,x,y,r,light,base,dark){
+ const g=c.createRadialGradient(x-r*.32,y-r*.38,2,x,y,r*1.33);
+ g.addColorStop(0,light);g.addColorStop(.65,base);g.addColorStop(1,dark);
+ oval(c,x,y,r,r,g);oval(c,x-r*.3,y-r*.3,r*.33,r*.13,'#ffffff66',-.35);
+}
+function crown(c,x,y,kind,color,phase){
+ c.save();c.translate(x,y);
+ const twinkle=Math.sin(phase)*1.7;
+ if(/cherry|doom|fire|jalapeno/.test(kind)){
+  oval(c,-8,-2+twinkle,13,16,'#c24d3f');oval(c,7,1+twinkle,13,16,color);
+  line(c,[[-8,-18],[0,-29],[10,-26]],'#5f933f',5);
+  oval(c,-13,-7+twinkle,5,3,'#ffffff6e');
+ }else if(/sun|gold|marigold/.test(kind)){
+  for(let k=0;k<10;k++){
+   const a=k*TAU/10;
+   oval(c,Math.cos(a)*19,Math.sin(a)*19+twinkle,7,11,'#f4c95c',a);
   }
- }else if(id.includes('cob')||id.includes('kernel')||id==='cabbage'||id==='melon'){
-  oval(c,0,t,15,14,'#e2c25e');for(let i=0;i<4;i++)disk(c,(i-1.5)*8,t-4,2,'#fff2af');
+  orb(c,0,twinkle,14,'#fff3b0','#deb158','#9f7536');
+ }else if(/snow|ice|winter|polar/.test(kind)){
+  for(let i=0;i<6;i++){
+   const a=i*TAU/6;
+   line(c,[[0,twinkle],[Math.cos(a)*19,Math.sin(a)*19+twinkle]],'#d9fbff',4);
+   line(c,[[Math.cos(a)*10-3,Math.sin(a)*10+twinkle-3],[Math.cos(a)*10+3,Math.sin(a)*10+twinkle+3]],'#abdef0',2);
+  }
+  orb(c,0,twinkle,8,'#f5ffff','#a6e9ff','#599cbb');
+ }else if(/star|threepeater|cattail/.test(kind)){
+  const v=[];for(let i=0;i<10;i++){
+   const a=i*Math.PI/5-Math.PI/2,r=i%2?9:22;
+   v.push([Math.cos(a)*r,Math.sin(a)*r+twinkle]);
+  }
+  c.beginPath();v.forEach((p,i)=>i?c.lineTo(...p):c.moveTo(...p));
+  c.closePath();c.fillStyle=color;c.fill();c.strokeStyle='#977f4678';c.lineWidth=2;c.stroke();
+ }else if(/spike|cactus/.test(kind)){
+  for(let i=-1;i<=1;i++){
+   c.beginPath();c.moveTo(i*11-9,15);c.lineTo(i*11,-22+twinkle);c.lineTo(i*11+9,15);
+   c.closePath();c.fillStyle=i%2?'#6b974c':'#b6bd79';c.fill();
+  }
+ }else if(/wall|nut|pumpkin|tall/.test(kind)){
+  orb(c,0,twinkle,19,'#f0ce9f','#b18c5c','#704d37');
+  oval(c,-6,-3+twinkle,3,5,'#443f32');oval(c,7,-3+twinkle,3,5,'#443f32');
+  line(c,[[-7,9+twinkle],[2,12+twinkle],[10,8+twinkle]],'#69533e',2);
+ }else if(/magnet/.test(kind)){
+  c.beginPath();c.arc(0,twinkle,17,0,Math.PI);
+  c.strokeStyle='#c1d7d9';c.lineWidth=10;c.stroke();
+  line(c,[[-17,twinkle],[-17,-15+twinkle]],'#e46f61',8);
+  line(c,[[17,twinkle],[17,-15+twinkle]],'#e46f61',8);
+ }else if(/fume|shroom|puff|hypno|scaredy|gloom/.test(kind)){
+  oval(c,0,8+twinkle,10,13,'#e3d9bb');
+  orb(c,0,-7+twinkle,22,'#e9dcff','#a080d3','#534d8a');
+  oval(c,-8,-17+twinkle,7,3,'#ffffff66');
+ }else if(/garlic/.test(kind)){
+  orb(c,0,twinkle,19,'#fff9e5','#d7d1aa','#aaa482');
+  for(let i=-1;i<=1;i++)oval(c,i*9,8+twinkle,6,12,'#f7efdc8a');
+ }else if(/melon|cabbage|kernel|cob/.test(kind)){
+  orb(c,0,twinkle,20,'#e5ec92','#92bc58','#416d42');
+  for(let i=-1;i<=1;i++)line(c,[[i*9,-16+twinkle],[i*11,13+twinkle]],'#488c4799',2);
  }else{
-  oval(c,-5,t,14,14,'#91c763');oval(c,9,2+t,13,8,'#64a55c');
-  disk(c,-8,-5+t,3,'#24492f');
+  orb(c,0,twinkle,18,'#d5ed92',color,'#477b37');
+  oval(c,10,5+twinkle,10,7,'#588e4a');
+  oval(c,-5,-5+twinkle,3,4,'#213d2d');
  }
  c.restore();
 }
 export function paintFusionArt(c,p,time=0){
- if(!Array.isArray(p.parts)||p.parts.length<2)return;
- const ids=p.parts.filter(id=>getPlant(id));
- if(ids.length<2)return;
- const secondary=ids.slice(1,-0||undefined); // show latest meaningful fused organ(s)
- const count=Math.min(3,secondary.length);
- for(let i=0;i<count;i++){
-  const id=secondary[secondary.length-count+i];
-  const angle=count===1?-.52:-.95+i*.82;
-  const x=count===1?-37:-37+i*35,y=-70-(i%2)*18;
-  line(c,[[-3,-35],[x*.45,-48],[x,y+12]],'#517f43',6);
-  oval(c,x*.55,-47,14,6,'#7aaf65',angle);
-  emblem(c,id,x,y,angle*.6,time);
-  const particle=Math.sin(time*3+i*2)*.5+.5;
-  disk(c,x+Math.sin(time*2+i)*14,y-23-(particle*9),2.3,hue(id)+'a0');
+ const parts=Array.isArray(p.parts)?p.parts:[];
+ if(parts.length<2)return;
+ const seeds=parts.filter(id=>getPlant(id));
+ if(seeds.length<2)return;
+ const traits=[...new Set(seeds.slice(1))].slice(-3);
+ const count=traits.length,bob=Math.sin(time*2.1)*2;
+ // Root nodes and two thick branches grow out of the primary silhouette.
+ c.save();
+ line(c,[[-8,-23],[-11,-44],[-3,-57]],'#3d6a31',8);
+ traits.forEach((part,i)=>{
+  const column=count===1?0:i-(count-1)*.5;
+  const x=column*37+(count===1?26:0);
+  const y=-99-Math.abs(column)*10+bob;
+  const stem=[[-2,-47],[(x*.55)-2,-65],[x,y+12]];
+  line(c,stem,'#326b35',9);line(c,stem,'#88bb58',3);
+  oval(c,x*.55-7,-64,15,7,'#69a44f',-.8+column*.35);
+  oval(c,x*.55+7,-67,12,6,'#a8cd72',.5);
+  crown(c,x,y,part,colorFor(part),time*2.4+i*.7);
+  const ring=c.createRadialGradient(x,y,3,x,y,36);
+  ring.addColorStop(0,colorFor(part)+'44');ring.addColorStop(1,colorFor(part)+'00');
+  oval(c,x,y,36,36,ring);
+ });
+ // A shared vascular root with multi-element striations.
+ for(let i=0;i<Math.min(4,seeds.length);i++){
+  let a=(i+.5)*TAU/Math.min(4,seeds.length)+time*.1;
+  const x=Math.cos(a)*30,y=-43+Math.sin(a)*27;
+  oval(c,x,y,3.3,6,colorFor(seeds[i]),a);
  }
- const rim=ids.map(hue);
- const glow=c.createLinearGradient(-38,-65,42,-30);
- glow.addColorStop(0,rim[0]+'44');glow.addColorStop(1,rim[rim.length-1]+'55');
- c.beginPath();c.ellipse(0,-45,36,42,0,0,TAU);c.strokeStyle=glow;c.lineWidth=3;c.stroke();
- // Hybrid core is larger for advanced multi-stage fusions, with a unique palette.
- let count2=Math.min(4,ids.length);
- for(let i=0;i<count2;i++){
-  let a=(-Math.PI*.9)+(i/(count2-1||1))*Math.PI*.75;
-  disk(c,Math.cos(a)*29,Math.sin(a)*34-48,3.5,hue(ids[i]));
- }
+ const left=colorFor(seeds[0]),right=colorFor(seeds[seeds.length-1]);
+ const g=c.createLinearGradient(-43,-66,42,-40);
+ g.addColorStop(0,left+'69');g.addColorStop(.5,'#ffffff0a');g.addColorStop(1,right+'82');
+ c.beginPath();c.ellipse(0,-52,39,42,0,0,TAU);
+ c.strokeStyle=g;c.lineWidth=3;c.stroke();
+ c.restore();
 }
