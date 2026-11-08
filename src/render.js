@@ -3,6 +3,7 @@ import {drawThirdWavePlant,drawPumpkinCover} from './art3.js';
 import {drawClassicPlant} from './classic-art.js';
 import {paintFusionArt} from './fusion-art.js';
 import {renderZombieAccessories} from './zombie-art.js';
+import {finishPlantArt,plantContactShadow,paintZombieSurface,paintWorldAtmosphere} from './painterly.js';
 const TAU=Math.PI*2;
 function box(c,x,y,w,h,r=10,fill='#ffffff',stroke=null,lineWidth=1){
  c.beginPath();c.roundRect(x,y,w,h,r);c.fillStyle=fill;c.fill();
@@ -158,6 +159,7 @@ function highlightPlant(c,icon,bob){
  }
 }
 
+function getPlantForArt(p){return p.spec||p;}
 function paintPlant(c,p,x,y,scale=1,time=0){
  const icon=p.icon||'pea';
  c.save();c.translate(x,y);c.scale(scale,scale);
@@ -228,6 +230,7 @@ function paintPlant(c,p,x,y,scale=1,time=0){
  highlightPlant(c,icon,bob);
  if(p.stacks>1)text(c,'×'+p.stacks,28,-16,22,'#fbf4b4','900','center');
  if(p.parts?.length>1)paintFusionArt(c,p,time);
+ finishPlantArt(c,{...p,...(getPlantForArt(p)||{})},time);
  c.restore();
 }
 function paintZombie(c,z,t){
@@ -287,6 +290,8 @@ function paintZombie(c,z,t){
  if(z.burn>0){
   for(let k=0;k<4;k++)oval(c,(k-1.5)*17,-95-k%2*19,7,17,k%2?'#ffc64a99':'#f3823688');
  }
+ renderZombieAccessories(c,z,t);
+ paintZombieSurface(c,z,t);
  if(z.hp<z.maxHp){box(c,-29,-212,58,7,3,'#3a2b2a');box(c,-28,-211,56*Math.max(0,z.hp/z.maxHp),5,2,'#9bce5b');}
  c.restore();
 }
@@ -484,7 +489,8 @@ export function drawScene(c,s,options){
   for(let row=0;row<5;row++)for(let col=0;col<9;col++){
    const p=s.grid[row][col];if(!p)continue;
    const x=B.x+(col+.5)*B.cw,y=B.y+(row+.64)*B.ch;
-   paintPlant(c,p,x,y,.91,s.t);
+   plantContactShadow(c,x,y+12,.99,p.parts?.length||1);
+   paintPlant(c,{...p,spec:options.getPlant(p.id)},x,y,.91,s.t);
    if(p.cover>0){
     c.save();c.globalAlpha=.56;
     drawPumpkinCover(c,x,y,p.cover);c.restore();
@@ -505,7 +511,7 @@ export function drawScene(c,s,options){
      if(k===0)c.moveTo(Math.cos(a)*r,Math.sin(a)*r);
      else c.lineTo(Math.cos(a)*r,Math.sin(a)*r);
     }
-    c.closePath();fill(c,col);c.restore();
+    c.closePath();c.fillStyle=col;c.fill();c.restore();
     circle(c,p.x,p.y,19,col+'39');
    }else{
     circle(c,p.x-15,p.y,9,col+'22');
@@ -514,6 +520,7 @@ export function drawScene(c,s,options){
    }
   }
   for(const u of s.suns)paintSun(c,u);
+  paintWorldAtmosphere(c,s.t,B);
   for(const p of s.effects){
    c.globalAlpha=Math.min(1,p.life/.32);
    circle(c,p.x,p.y,p.size*2,p.color+'33');
