@@ -1,64 +1,59 @@
-export const SEEDS = [
-  { id:'pea', name:'豌豆射手', icon:'pea', cost:100, cooldown:5, hp:130, damage:25, interval:1.42, desc:'向前射出豌豆' },
-  { id:'sun', name:'向日葵', icon:'sun', cost:50, cooldown:6, hp:110, production:25, interval:13, desc:'周期性生产阳光' },
-  { id:'wall', name:'坚果墙', icon:'wall', cost:50, cooldown:15, hp:1050, desc:'阻挡僵尸前进' },
-  { id:'ice', name:'寒冰射手', icon:'ice', cost:175, cooldown:7, hp:130, damage:20, interval:1.55, freeze:3.4, desc:'攻击并减缓僵尸速度' },
-  { id:'fire', name:'火焰花', icon:'fire', cost:150, cooldown:9, hp:130, damage:30, interval:1.7, burn:22, desc:'炽热弹丸造成额外伤害' },
-  { id:'cherry', name:'樱桃炸弹', icon:'cherry', cost:150, cooldown:20, hp:100, explosive:135, interval:.85, desc:'靠近敌人时范围爆炸' },
-  { id:'twin', name:'双子葵', icon:'twin', cost:125, cooldown:9, hp:130, production:50, interval:13, desc:'单次生产更多阳光' },
-  { id:'melon', name:'玉米投手', icon:'melon', cost:125, cooldown:8, hp:120, damage:20, interval:2.15, lob:true, desc:'发射抛射物，造成溅射伤害' }
-];
-const fusion = (a,b,name,desc,stats,icon) => ({ inputs:[a,b],name,desc,...stats,icon:icon || a });
-export const RECIPES = [
-  fusion('pea','pea','双管豌豆','一次发射双颗豌豆。',{damage:28,interval:1.35,double:true},'pea'),
-  fusion('pea','sun','阳光豌豆','持续生产阳光，同时发射豌豆。',{damage:25,interval:1.5,production:25},'pea'),
-  fusion('pea','wall','坚果炮台','坚固的防御型远程炮台。',{hp:1100,damage:24,interval:1.5},'wall'),
-  fusion('pea','ice','冰霜双射手','双发寒冰弹，冻结僵尸行动。',{damage:25,interval:1.7,double:true,freeze:4},'ice'),
-  fusion('pea','fire','烈焰豌豆','高速发射灼烧弹丸。',{damage:42,interval:1.25,burn:28},'fire'),
-  fusion('pea','cherry','爆裂豌豆','发射会造成局部溅射的弹丸。',{damage:48,interval:1.55,splash:65},'cherry'),
-  fusion('pea','twin','双阳光射手','双倍阳光与稳定射击并存。',{damage:27,interval:1.45,production:50},'twin'),
-  fusion('pea','melon','连发玉米炮','连发弹丸并附加溅射火力。',{damage:35,interval:1.6,double:true,lob:true},'melon'),
-  fusion('sun','sun','闪耀双葵','提升阳光产出效率。',{production:50,interval:10},'sun'),
-  fusion('sun','wall','阳光坚果','坚固防线也能生产阳光。',{hp:1300,production:25,interval:12},'wall'),
-  fusion('sun','ice','寒光葵','阳光供给与冰霜攻击合一。',{production:25,damage:25,interval:1.55,freeze:3.5},'ice'),
-  fusion('sun','fire','熔金葵','生产阳光并发射灼热火弹。',{production:25,damage:34,interval:1.7,burn:20},'fire'),
-  fusion('sun','cherry','阳光爆弹','引爆时获得额外阳光。',{explosive:155,interval:1,production:25},'cherry'),
-  fusion('sun','twin','三重向日葵','强力的阳光经济核心。',{production:75,interval:11},'twin'),
-  fusion('sun','melon','金色投手','生产阳光并发射抛射物。',{production:25,damage:20,interval:2,lob:true},'melon'),
-  fusion('wall','wall','高坚果','拥有更高耐久度的坚果墙。',{hp:2300},'wall'),
-  fusion('wall','ice','冰晶坚果','坚固且能发射减速弹。',{hp:1200,damage:18,interval:2.1,freeze:4},'ice'),
-  fusion('wall','fire','熔岩坚果','坚固的火焰防线。',{hp:1250,damage:28,interval:1.9,burn:35},'fire'),
-  fusion('wall','cherry','爆破坚果','僵尸接近时引爆的防御植物。',{hp:800,explosive:170,interval:1},'wall'),
-  fusion('wall','twin','金甲坚果','阳光与高耐久防御结合。',{hp:1450,production:50,interval:15},'wall'),
-  fusion('wall','melon','坚果投手','耐久炮台，能投射爆裂玉米。',{hp:1200,damage:25,interval:2.1,lob:true},'melon'),
-  fusion('ice','ice','双重冰霜','双弹减速攻击。',{damage:22,interval:1.4,double:true,freeze:4.6},'ice'),
-  fusion('ice','fire','霜焰射手','冰与火兼备的元素射手。',{damage:40,interval:1.45,freeze:2,burn:35},'fire'),
-  fusion('ice','cherry','冰晶爆弹','接近僵尸时释放冰晶爆炸。',{explosive:170,interval:.85},'ice'),
-  fusion('ice','twin','双生冰葵','双倍产光并发射寒冰弹。',{production:50,damage:22,interval:1.5,freeze:3},'ice'),
-  fusion('ice','melon','冰霜投手','向敌人投射减速与范围伤害。',{damage:30,interval:2,freeze:4,lob:true},'melon'),
-  fusion('fire','fire','双焰射手','双弹高温攻击。',{damage:37,interval:1.35,double:true,burn:25},'fire'),
-  fusion('fire','cherry','熔核爆弹','爆炸威力更大的植物。',{explosive:215,interval:.7},'cherry'),
-  fusion('fire','twin','熔金双葵','双份阳光，附带火焰弹攻击。',{production:50,damage:35,interval:1.65,burn:20},'fire'),
-  fusion('fire','melon','火焰投手','爆燃弹丸和抛射攻击。',{damage:40,interval:2,burn:22,lob:true},'melon'),
-  fusion('cherry','cherry','连锁樱桃','更广的爆炸影响范围。',{explosive:255,interval:.7},'cherry'),
-  fusion('cherry','twin','光能爆弹','爆炸前持续生产阳光。',{production:50,explosive:160,interval:1},'cherry'),
-  fusion('cherry','melon','爆玉米','近敌爆炸，造成大范围伤害。',{explosive:185,interval:.9},'melon'),
-  fusion('twin','twin','四重阳光葵','巨量阳光生产者。',{production:100,interval:12},'twin'),
-  fusion('twin','melon','双金投手','生产阳光并投射双重弹丸。',{production:50,damage:25,interval:1.95,lob:true},'melon'),
-  fusion('melon','melon','重型投手','双投射弹增强范围伤害。',{damage:34,interval:1.8,lob:true,double:true},'melon')
-];
-export const fusionKey = (a,b) => [a,b].sort().join('+');
-const recipes = new Map(RECIPES.map(r => [fusionKey(...r.inputs),r]));
-export function recipeFor(parts, next) {
-  if (parts.length >= 2) return null;
-  return recipes.get(fusionKey(parts[0],next)) || null;
+// The first six day plants, fusion names and baseline values follow the PvZ Fusion Wiki.
+// Design references: docs/REFERENCE.md. Further exotic classes deliberately omitted.
+export const SEEDS = Object.freeze([
+  {id:'pea',name:'豌豆射手',icon:'pea',cost:100,cooldown:7.5,hp:300,damage:20,interval:1.5,shots:1,desc:'每1.5秒发射20伤害豌豆。'},
+  {id:'sun',name:'向日葵',icon:'sun',cost:50,cooldown:7.5,hp:300,sun:25,sunInterval:25,desc:'首次5–8秒，之后每25秒产生25阳光。'},
+  {id:'cherry',name:'樱桃炸弹',icon:'cherry',cost:150,cooldown:50,hp:300,explosion:{damage:1800,radius:1.48,trigger:'fuse'},desc:'短暂引爆，伤害1800、半径1.48格。'},
+  {id:'wall',name:'坚果',icon:'wall',cost:50,cooldown:30,hp:4000,desc:'4000韧性的防御植物。'},
+  {id:'potato',name:'土豆雷',icon:'potato',cost:25,cooldown:30,hp:300,mine:{arm:16,damage:1800,radius:.74},desc:'15–17秒武装，碰到僵尸后爆炸。'},
+  {id:'chomper',name:'大嘴花',icon:'chomper',cost:150,cooldown:7.5,hp:300,chomp:{range:1.22,digest:30},desc:'吞噬前方僵尸，消化需约30秒。'}
+]);
+
+function f(id,name,inputs,data,desc){
+  return {id,name,inputs,icon:data.icon||id,...data,desc};
 }
-export function costFor(id) { return SEEDS.find(s => s.id === id)?.cost ?? 0; }
-export function createPlant(source,parts) {
-  return { id:source.id || source.name, name:source.name, parts, icon:source.icon,
-    hp:source.hp || 120, maxHp:source.hp || 120, damage:source.damage || 0,
-    interval:source.interval || 2, production:source.production || 0,
-    freeze:source.freeze || 0, burn:source.burn || 0, splash:source.splash || 0,
-    double:source.double || false, lob:source.lob || false,
-    explosive:source.explosive || 0, timer:source.explosive ? .8 : .65, sunTimer:source.production ? 6 : Infinity, age:0 };
+export const RECIPES = Object.freeze([
+  f('repeater','双发射手',['pea','pea'],{icon:'pea',hp:300,damage:20,interval:1.5,shots:2},'每轮发射2颗豌豆，20×2/1.5秒。'),
+  f('solar-pea','豌豆向日葵',['pea','sun'],{icon:'pea-sun',hp:300,damage:30,interval:1.5,sun:25,sunInterval:25,hitSunEvery:3},'每1.5秒发射30伤害的阳光子弹；每第三次命中产生5阳光，同时自然产光。'),
+  f('cherry-shooter','樱桃射手',['pea','cherry'],{icon:'cherry-pea',hp:300,damage:60,interval:1.5},'发射60伤害樱桃子弹。'),
+  f('pea-nut','坚果射手',['pea','wall'],{icon:'pea-wall',hp:4000,damage:20,interval:1.5,pierce:true},'4000韧性，每1.5秒发射20伤害、可穿透的滚地坚果。'),
+  f('pea-mine','豌豆土豆雷',['pea','potato'],{icon:'pea-potato',hp:300,damage:20,interval:1.5,onDeathExplosion:{damage:1800,radius:.74},accelerateNear:true},'能射击；僵尸越近，发射越快。死亡时爆炸。'),
+  f('pea-chomper','豌豆大嘴花',['pea','chomper'],{icon:'pea-chomper',hp:300,damage:20,interval:1.5,chomp:{range:1.22,digest:30}},'能吞噬前方僵尸，也能发射子弹。'),
+  f('twin-sun','双子向日葵',['sun','sun'],{icon:'twin',hp:300,sun:50,sunInterval:20},'每20秒产生两份25阳光。'),
+  f('solar-bomb','阳光炸弹',['sun','cherry'],{icon:'sun-cherry',hp:300,explosion:{damage:1800,radius:1.48,trigger:'fuse',sunOnHit:25}},'爆炸每命中一名僵尸生成25阳光。'),
+  f('solar-nut','阳光坚果',['sun','wall'],{icon:'sun-wall',hp:4000,sun:25,sunInterval:15,sunOnCrack:25,sunOnDeath:50},'4000韧性；每15秒产25阳光，破损与死亡额外掉阳光。'),
+  f('solar-mine','阳光土豆雷',['sun','potato'],{icon:'sun-potato',hp:300,sun:25,sunInterval:15,mine:{arm:16,damage:1800,radius:.74},sunOnExplode:75},'产阳光的土豆雷，武装后触发爆炸。'),
+  f('solar-chomper','阳光大嘴花',['sun','chomper'],{icon:'sun-chomper',hp:300,chomp:{range:1.22,digest:30},sunOnChomp:50},'吞噬僵尸时额外获得阳光。'),
+  f('cherry-nut','樱桃坚果',['cherry','wall'],{icon:'cherry-wall',hp:4000,onDeathExplosion:{damage:1800,radius:1.48}},'4000韧性，死亡时爆炸；受到樱桃爆炸可回血。'),
+  f('cherry-mine','樱桃土豆雷',['cherry','potato'],{icon:'cherry-potato',hp:300,mine:{arm:16,damage:1800,radius:1.48}},'樱桃强化的地雷，武装后造成范围爆炸。'),
+  f('cherry-chomper','樱桃大嘴花',['cherry','chomper'],{icon:'cherry-chomper',hp:300,chomp:{range:1.22,digest:30},onChompExplosion:{damage:300,radius:1}},'吞食时同时造成樱桃范围伤害。'),
+  f('giant-nut','巨型坚果',['wall','wall'],{icon:'giant-wall',hp:8000},'更强韧的大型坚果防线。'),
+  f('potato-nut','土豆坚果',['potato','wall'],{icon:'potato-wall',hp:4000,onDeathExplosion:{damage:1800,radius:.74}},'高耐久的地雷防线；失去韧性时爆炸。'),
+  f('nut-chomper','大嘴坚果',['wall','chomper'],{icon:'wall-chomper',hp:4000,chomp:{range:1.22,digest:30}},'结合坚果韧性与吞噬能力。'),
+  f('potato-chomper','土豆大嘴花',['potato','chomper'],{icon:'potato-chomper',hp:300,chomp:{range:1.22,digest:30},onDeathExplosion:{damage:1800,radius:.74}},'吞噬与地雷爆炸结合。'),
+  f('super-cherry','超级樱桃射手',['cherry-shooter','cherry'],{icon:'super-cherry',hp:300,damage:300,interval:3,splash:{radius:1,damage:300},cherryRecharge:.85},'每3秒发射一颗300伤害的范围爆炸樱桃。'),
+  f('cherry-repeater','樱桃双发射手',['repeater','cherry'],{icon:'cherry-pea',hp:300,damage:60,interval:1.5,shots:2},'发射2颗樱桃子弹，每颗60伤害。'),
+  f('split-pea','裂荚射手',['repeater','pea'],{icon:'pea',hp:300,damage:20,interval:1.5,shots:2,backShot:true},'向前双发，并能向后射击。'),
+  f('gatling-pea','机枪射手',['repeater','repeater'],{icon:'pea',hp:300,damage:20,interval:1.5,shots:4},'每轮连发4颗豌豆。')
+]);
+export function fusionKey(a,b){return [a,b].sort().join('+');}
+const recipes=new Map(RECIPES.map(recipe=>[fusionKey(...recipe.inputs),recipe]));
+const plantMap=new Map([...SEEDS,...RECIPES].map(x=>[x.id,x]));
+export function getPlant(id){return plantMap.get(id)||null;}
+export function recipeFor(first,second){
+  const a=Array.isArray(first)?(first.length===1?first[0]:null):first;
+  if(!a||!second)return null;
+  return recipes.get(fusionKey(a,second))||null;
+}
+export function costFor(id){return getPlant(id)?.cost||0;}
+export function createPlant(source,parts){
+  const spec=typeof source==='string'?getPlant(source):source;
+  if(!spec)throw new TypeError('Unknown plant');
+  return {id:spec.id,name:spec.name,icon:spec.icon,parts:parts||[spec.id],
+    hp:spec.hp,maxHp:spec.hp,age:0,fireTimer:.65,sunTimer:spec.sun?6:Infinity,
+    fuseTimer:spec.explosion?.trigger==='fuse'?.7:Infinity,
+    armedAt:spec.mine?.arm||0,digestTimer:0,shotsHit:0,crackPhase:0};
+}
+export function unlockedSeeds(level,freeMode=false){
+  return freeMode?SEEDS:SEEDS.slice(0,Math.min(6,Math.max(2,level+1)));
 }
