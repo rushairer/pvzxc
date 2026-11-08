@@ -12,7 +12,7 @@
   <div class="app-shell">
     <header class="site-head">
       <a class="wordmark" href="./" aria-label="融合花园首页"><span class="mark-icon">✿</span><span>融合花园 <em>PVZXC</em></span></a>
-      <div class="header-right"><span class="version">WEB · ALPHA 0.2</span><button class="plain-button" id="headerHelp" type="button">玩法说明 <span aria-hidden="true">?</span></button></div>
+      <div class="header-right"><span class="version">WEB · ALPHA 0.3</span><button class="plain-button" id="headerHelp" type="button">玩法说明 <span aria-hidden="true">?</span></button></div>
     </header>
     <main>
       <div class="game-frame">
@@ -27,7 +27,7 @@
               <button class="action-button primary" id="primaryAction" type="button">▶ 开始冒险</button>
               <button class="action-button secondary" id="secondaryAction" type="button">查看融合图鉴</button><button class="action-button secondary free-play" id="freeAction" type="button">✦ 自由模式 · 全植物解锁</button>
             </div>
-            <div class="menu-tip">高清画面 · 16 种植物 · 46 种融合 · 无需安装</div>
+            <div class="menu-tip">画质增强 · 29 种基础植物 · 68 条融合配方 · 无需安装</div>
           </div>
         </div>
         <div class="overlay guide-overlay" id="guideOverlay" role="dialog" aria-modal="true" aria-labelledby="guideTitle" aria-hidden="true">
@@ -35,15 +35,20 @@
             <header class="guide-head"><div><span class="menu-kicker">GAME GUIDE</span><h2 id="guideTitle">融合图鉴与操作</h2></div><button class="close-button" id="closeGuide" type="button" aria-label="关闭图鉴">×</button></header>
             <div class="guide-intro">选择上方卡牌，再点击草坪种植；选择另一张卡牌，点击已有植物即可融合。击败所有波次获得胜利。</div>
             <div class="shortcuts"><span>数字 1–7：选植物</span><span>← / →：翻卡页</span><span>0 / X：铲子</span><span>空格：暂停</span><span>Esc：取消选择</span><span>右键：取消选择</span></div>
-            <div class="guide-section-title">当前版本已实现的融合配方</div>
+            <div class="guide-section-title">当前已实现的 68 条融合配方</div>
+            <div class="recipe-searchbar">
+              <label for="recipeSearch">查找融合</label>
+              <input id="recipeSearch" type="search" placeholder="输入植物名或效果，如：寒冰、磁力、玉米" autocomplete="off">
+              <span id="recipeCount" aria-live="polite">68 条</span>
+            </div>
             <div class="recipe-grid" id="recipeGrid"></div>
-            <div class="guide-foot">当前含16种基础植物、46条融合路径；原作完整关卡、特效及其他特殊模式仍在开发。</div>
+            <div class="guide-foot">当前含29种基础植物、68条融合路径。部分融合特性属于可玩近似，不代表原版数值完全一致。</div>
           </div>
         </div>
         <div class="rotate-tip">横屏体验更好 · 请旋转设备</div>
       </div>
       <div class="below-game">
-        <div class="play-instruction"><strong>玩法：</strong>上方选种子 → 点击草格种植或融合；右侧种子卡翻页可选择更多植物；点击掉落阳光收集。</div>
+        <div class="play-instruction"><strong>玩法：</strong>上方选种子 → 点击草格种植或融合；右侧种子卡翻页可选择29种植物；点击掉落阳光收集。</div>
         <span class="copyright-note">独立学习项目；画面与程序为原创实现，非官方游戏。</span>
       </div>
     </main>
