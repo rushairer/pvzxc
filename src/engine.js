@@ -1,4 +1,4 @@
-import {SEEDS,RECIPES,getPlant,recipeFor,createPlant,unlockedSeeds} from './model.js';
+import {SEEDS,RECIPES,getPlant,recipeFor,createPlant,unlockedSeeds,costFor} from './model.js';
 export const BOARD={x:184,y:188,w:1053,h:540,rows:5,cols:9,cw:117,ch:108};
 import {CLASSIC_ZOMBIES} from './classic.js';
 import {applySpecialZombie,pickEndlessEnemy} from './zombie-special.js';
@@ -11,7 +11,7 @@ export function newGame(){
  return {mode:'endless',phase:'playing',paused:false,t:0,sun:ENDLESS.initialSun,
   grid:Array.from({length:5},()=>Array(9).fill(null)),zombies:[],bullets:[],suns:[],effects:[],
   mowers:Array(5).fill(true),craters:[],coins:0,screenFlash:0,windLeft:0,
-  decks:unlockedSeeds(),cooldowns:{},selected:null,shovel:false,hover:null,page:0,lastPlanted:null,graves:[],
+  decks:unlockedSeeds(),cooldowns:{},selected:null,shovel:false,hover:null,page:0,lastPlanted:null,quickRecipe:null,graves:[],
   kills:0,spawnCount:0,spawnTimer:9,skyTimer:8,wave:1,flags:0,message:'无尽融合开始！49种植物与全部配方已开放。',messageLeft:5,
   shake:0,uid:0,totalSuns:0,solved:new Set(),waveClock:0,record:0,failed:false};
 }
@@ -34,50 +34,50 @@ export function plantHere(s,row,col,id){
    s.grid[row][col]=null;s.shovel=false;message(s,'植物已移除');return true;
  }
  const selected=getPlant(id);
- if(!selected||!s.decks.some(x=>x.id===id))return false;
+ if(!selected||(!s.decks.some(x=>x.id===id)&&!(s.quickRecipe===id&&Array.isArray(selected.inputs))))return false;
  if(s.cooldowns[id]>0){message(s,'植物尚在冷却');return false;}
  const imitation=id==='imitater'?getPlant(s.lastPlanted):null;
  if(id==='imitater'&&(!imitation||imitation.id==='imitater')){message(s,'先成功种植一种植物，再使用模仿者');return false;}
- const item=imitation||selected,price=item.cost;
+ const item=imitation||selected,price=costFor(item.id);
  const blockedByGrave=s.graves?.some(g=>g.row===row&&g.col===col);
  if(blockedByGrave&&!selected.graveBuster){message(s,'墓碑占据草坪，先用墓碑吞噬者清理！');return false;}
  if(s.sun<price){message(s,'阳光不足');return false;}
  if(selected.coffee){
   if(!cur){message(s,'咖啡豆需要种在植物上');return false;}
   cur.boostLeft=16;cur.fireTimer=0;cur.sunTimer=Math.min(cur.sunTimer||8,2);
-  s.sun-=price;s.cooldowns[id]=selected.cooldown;s.lastPlanted=id;
+  s.sun-=price;s.cooldowns[id]=selected.cooldown??14;s.lastPlanted=id;
   particles(s,center(row,col).x,center(row,col).y-40,'#dcac77',12);return true;
  }
  if(selected.graveBuster){
   const grave=s.graves?.find(g=>g.row===row&&g.col===col);
   if(!grave){message(s,'请把墓碑吞噬者种在墓碑上');return false;}
-  s.graves=s.graves.filter(g=>g!==grave);s.sun-=price;s.cooldowns[id]=selected.cooldown;s.lastPlanted=id;
+  s.graves=s.graves.filter(g=>g!==grave);s.sun-=price;s.cooldowns[id]=selected.cooldown??14;s.lastPlanted=id;
   particles(s,center(row,col).x,center(row,col).y,'#bca17c',24);return true;
  }
  const fusion=cur?recipeFor(cur.id,item.id):null;
  if(item.id==='pumpkin'&&cur){
    const max=4000;
    if(cur.cover>=max){message(s,'南瓜护甲已经完好');return false;}
-   cur.cover=max;s.sun-=price;s.cooldowns[id]=selected.cooldown;s.lastPlanted=id;
+   cur.cover=max;s.sun-=price;s.cooldowns[id]=selected.cooldown??14;s.lastPlanted=id;
    const {x,y}=center(row,col);particles(s,x,y,'#ffba6c',18);
    message(s,'南瓜护甲装配完成');return true;
  }
  if(cur?.id==='puff'&&item.id==='puff'&&cur.stacks<3){
-  cur.stacks++;s.cooldowns[id]=selected.cooldown;s.lastPlanted=id;message(s,'小喷菇密植 '+cur.stacks+'/3');return true;
+  cur.stacks++;s.cooldowns[id]=selected.cooldown??14;s.lastPlanted=id;message(s,'小喷菇密植 '+cur.stacks+'/3');return true;
  }
  if(cur&&!fusion&&cur.platform&&item.id!=='lilypad'&&item.id!=='flowerpot'){
    const newPlant=createPlant(item,[item.id]);
    newPlant.platform=cur.platform;s.grid[row][col]=newPlant;
-   s.sun-=price;s.cooldowns[id]=selected.cooldown;s.lastPlanted=id;return true;
+   s.sun-=price;s.cooldowns[id]=selected.cooldown??14;s.lastPlanted=id;return true;
  }
  if(cur&&!fusion){message(s,'这两种植物没有对应融合配方',3);return false;}
- const created=createPlant(fusion||item,cur?[...cur.parts,item.id]:[item.id]);
+ const created=createPlant(fusion||item,cur?[...cur.parts,item.id]:(item.inputs||[item.id]));
  if(fusion){
    // Fusion inherits the surviving existing plant's damage and planting age only where appropriate.
    s.solved.add(fusion.id);
    message(s,'融合成功：'+fusion.name,3);
  }
- s.grid[row][col]=created;s.sun-=price;s.cooldowns[id]=selected.cooldown;s.lastPlanted=id;
+ s.grid[row][col]=created;s.sun-=price;s.cooldowns[id]=selected.cooldown??14;s.lastPlanted=id;
  const {x,y}=center(row,col);particles(s,x,y-26,fusion?'#ffe17a':'#d0ef84',fusion?22:8);
  if((fusion||item).onPlantRowFire)for(let rr=Math.max(0,row-1);rr<=Math.min(4,row+1);rr++)rowFire(s,rr,300);
  
