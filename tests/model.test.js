@@ -44,8 +44,9 @@ test('115 distinct fusion recipes have resolvable ingredients and products',()=>
 });
 test('endless mode does not end after the previous 5-wave campaign duration',()=>{
  const s=newGame();s.spawnTimer=1e6;s.skyTimer=1e6;
- step(s,208);assert.ok(s.wave>=7);assert.equal(s.phase,'playing');
- step(s,100);assert.ok(s.wave>=9);assert.equal(s.phase,'playing');
+ // Clear flag zombies as they spawn: this is a wave longevity test, not a defense test.
+ for(let i=0;i<Math.ceil(310/.05);i++){tick(s,.05);s.zombies.length=0;}
+ assert.ok(s.wave>=10);assert.equal(s.phase,'playing');
 });
 test('all cards can be planted from the beginning',()=>{
  for(const seed of SEEDS){
