@@ -56,7 +56,7 @@ export function makeSnapshot(s,now=Date.now()){
   t:s.t,sun:s.sun,grid:s.grid,zombies:s.zombies,
   bullets:s.bullets.slice(0,600).map(projectile),
   suns:s.suns.slice(0,200),mowers:s.mowers,
-  craters:s.craters,coins:s.coins,cooldowns:s.cooldowns,
+  craters:s.craters,graves:s.graves||[],iceTrails:s.iceTrails||[],coins:s.coins,cooldowns:s.cooldowns,
   kills:s.kills,spawnCount:s.spawnCount,spawnTimer:s.spawnTimer,skyTimer:s.skyTimer,
   wave:s.wave,waveClock:s.waveClock,flags:s.flags,uid:s.uid,solved:Array.from(s.solved),
   totalSuns:s.totalSuns,page:s.page,lastPlanted:s.lastPlanted,record:s.record
@@ -76,6 +76,8 @@ export function restoreSnapshot(snapshot){
  s.suns=(Array.isArray(raw.suns)?raw.suns:[]).slice(0,200).map(asObject);
  s.mowers=Array.isArray(raw.mowers)&&raw.mowers.length===5?raw.mowers.map(Boolean):Array(5).fill(true);
  s.craters=(Array.isArray(raw.craters)?raw.craters:[]).slice(0,45).map(asObject).filter(c=>number(c.life,0)>0);
+ s.graves=(Array.isArray(raw.graves)?raw.graves:[]).slice(0,20).map(asObject).filter(g=>Number.isInteger(g.row)&&g.row>=0&&g.row<5&&Number.isInteger(g.col)&&g.col>=0&&g.col<9);
+ s.iceTrails=(Array.isArray(raw.iceTrails)?raw.iceTrails:[]).slice(0,100).map(asObject).filter(t=>number(t.life,0)>0);
  s.coins=number(raw.coins,0,0,1e9);
  const cooldowns=asObject(raw.cooldowns);
  s.cooldowns=Object.fromEntries(SEEDS.map(p=>[p.id,number(cooldowns[p.id],0,0,120)]));
