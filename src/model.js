@@ -51,7 +51,7 @@ export function createPlant(source,parts){
   if(!spec)throw new TypeError('Unknown plant');
   return {id:spec.id,name:spec.name,icon:spec.icon,parts:parts||[spec.id],
     hp:spec.hp,maxHp:spec.hp,age:0,fireTimer:.65,sunTimer:spec.sun?6:Infinity,
-    fuseTimer:spec.explosion?.trigger==='fuse'?.7:Infinity,
+    fuseTimer:spec.explosion?.trigger==='fuse' ? 0.7 : Infinity,
     armedAt:spec.mine?.arm||0,digestTimer:0,shotsHit:0,crackPhase:0};
 }
 export function unlockedSeeds(level,freeMode=false){
