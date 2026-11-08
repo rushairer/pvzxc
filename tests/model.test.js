@@ -153,3 +153,43 @@ test('spikeweed damages enemies while remaining passable',()=>{
  assert.ok(s.zombies[0].hp<before);
  assert.ok(s.zombies[0].x<x);
 });
+
+test('torch stump strengthens regular peas crossing its cell',()=>{
+ const s=newGame(5,true);s.sun=999;
+ assert.ok(plantHere(s,2,4,'torch'));
+ assert.ok(plantHere(s,2,2,'pea'));
+ spawn(s,2,'normal',1400);s.spawnTimer=999;s.skyTimer=999;
+ let empowered=false;
+ for(let i=0;i<160;i++){
+  tick(s,.05);
+  if(s.bullets.some(b=>b.damage>=40)){empowered=true;break;}
+ }
+ assert.equal(empowered,true);
+});
+
+test('squash jumps on nearby zombie and consumes itself',()=>{
+ const s=newGame(5,true);s.sun=999;
+ assert.ok(plantHere(s,2,2,'squash'));
+ spawn(s,2,'normal',BOARD.x+(2.5)*BOARD.cw+40);s.spawnTimer=999;s.skyTimer=999;
+ for(let i=0;i<16;i++)tick(s,.05);
+ assert.equal(s.grid[2][2],null);
+ assert.ok(s.kills>=1);
+});
+
+test('jalapeno row fire only affects its own lane',()=>{
+ const s=newGame(5,true);s.sun=999;
+ spawn(s,1,'normal',1200);spawn(s,2,'normal',1200);s.spawnTimer=999;s.skyTimer=999;
+ const untouched=s.zombies[1].hp;
+ assert.ok(plantHere(s,1,2,'jalapeno'));
+ for(let i=0;i<15;i++)tick(s,.05);
+ assert.equal(s.zombies.length,1);
+ assert.equal(s.zombies[0].row,2);
+ assert.equal(s.zombies[0].hp,untouched);
+});
+
+test('free play supports 3 pages and every seed stays selectable',()=>{
+ const s=newGame(5,true);
+ assert.equal(s.decks.length,16);
+ assert.equal(Math.ceil(s.decks.length/7),3);
+ for(const item of s.decks){s.sun=999;s.cooldowns[item.id]=0;assert.ok(plantHere(s,0,s.decks.indexOf(item)%9,item.id));}
+});
