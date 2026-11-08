@@ -3,6 +3,15 @@ import {BOARD,LEVELS,newGame,plantHere,collectAt,tick,message} from './engine.js
 import {drawScene} from './render.js';
 
 const canvas=document.getElementById('game'),ctx=canvas.getContext('2d');
+const LOGICAL_WIDTH=1440,LOGICAL_HEIGHT=820;
+function configureResolution(){
+ const dpr=Math.max(1,Math.min(2,window.devicePixelRatio||1));
+ const width=Math.round(LOGICAL_WIDTH*dpr),height=Math.round(LOGICAL_HEIGHT*dpr);
+ if(canvas.width!==width||canvas.height!==height){canvas.width=width;canvas.height=height;}
+ ctx.setTransform(canvas.width/LOGICAL_WIDTH,0,0,canvas.height/LOGICAL_HEIGHT,0,0);
+}
+configureResolution();
+window.addEventListener('resize',configureResolution);
 const overlay=document.getElementById('mainOverlay'),guide=document.getElementById('guideOverlay');
 const primary=document.getElementById('primaryAction'),secondary=document.getElementById('secondaryAction');
 const heading=document.getElementById('overlayTitle'),description=document.getElementById('overlayDescription');
@@ -71,7 +80,7 @@ for(const recipe of RECIPES){
 }
 function point(ev){
  const r=canvas.getBoundingClientRect();
- return{x:(ev.clientX-r.left)*canvas.width/r.width,y:(ev.clientY-r.top)*canvas.height/r.height};
+ return{x:(ev.clientX-r.left)*LOGICAL_WIDTH/r.width,y:(ev.clientY-r.top)*LOGICAL_HEIGHT/r.height};
 }
 function pointerAction(x,y){
  if(!game||scene!=='playing'||game.paused||guide.classList.contains('is-visible'))return;
