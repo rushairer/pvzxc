@@ -129,7 +129,7 @@ function shoot(s,p,spec,row,col){
    hit:new Set(),torchCells:new Set(),splash:spec.splash,lob:!!spec.lob,antiAir:!!spec.antiAir,
    butterChance:spec.butterChance||0,butterDamage:spec.butterDamage||0,butterStun:spec.butterStun||0,
    poison:spec.poison||0,charmChance:spec.charmChance||0,homing:!!spec.homing,
-   hitSun:spec.hitSunEvery?{owner:p,each:spec.hitSunEvery}:null});
+   hitSun:spec.hitSunEvery?{owner:p,row,col,each:spec.hitSunEvery}:null});
  }
  if(spec.backShot)s.bullets.push({x:x-26,y:y-20,row,damage:20,life:3.8,speed:-280,icon:'pea',hit:new Set(),torchCells:new Set(),originX:x,range:Infinity});
 }
