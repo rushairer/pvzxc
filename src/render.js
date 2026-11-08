@@ -391,17 +391,17 @@ function hud(c,s,options){
 }
 function status(c,s){
  box(c,176,754,1076,54,10,'#182d1ee6','#87a666',2);
- const level=s?.level||1,progress=s?Math.min(1,s.t/s.def.length):0;
- text(c,'关卡 '+level,193,781,17,'#ffda82','900');
- box(c,290,775,606,16,7,'#0f2217');
- box(c,293,778,Math.max(0,600*progress),10,4,'#eebd59');
- for(let k=1;k<=(s?.def.waves||3);k++){
-  let x=290+606*k/(s?.def.waves||3);
-  text(c,'⚑',x,766,17,'#f3d36f','850','center');
+ const wave=s?.wave||1,duration=34,progress=s?Math.min(1,(s.t%duration)/duration):0;
+ text(c,'无尽 '+wave+' 波',193,781,18,'#ffda82','900');
+ box(c,333,775,547,16,7,'#0f2217');
+ box(c,336,778,Math.max(0,541*progress),10,4,'#eebd59');
+ for(let k=1;k<=5;k++){
+  let x=333+547*k/5;
+  text(c,'✦',x,767,14,k===5?'#f9cf7b':'#abc383','850','center');
  }
- text(c,'第 '+(s?.wave||1)+' / '+(s?.def.waves||3)+' 波',918,781,16,'#f8ebc8','900');
- text(c,'击败 '+(s?.kills||0),1065,781,16,'#d5e8bd','800');
- text(c,'金币 '+(s?.coins||0),1162,781,14,'#ffe8a0','800');
+ text(c,'第 '+wave+' 波',909,781,18,'#f8ebc8','900');
+ text(c,'击败 '+(s?.kills||0),1060,781,15,'#d5e8bd','800');
+ text(c,'金币 '+(s?.coins||0),1164,781,14,'#ffe8a0','800');
  if(s?.messageLeft>0){
   box(c,475,161,490,36,13,'#213c25e9','#a8c175',1);
   text(c,s.message,720,178,18,'#fff4c7','850','center');
