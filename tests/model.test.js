@@ -4,8 +4,13 @@ import {SEEDS,RECIPES,getPlant,recipeFor,createPlant,fusionKey,unlockedSeeds} fr
 import {BOARD,LEVELS,newGame,plantHere,collectAt,spawn,tick} from '../src/engine.js';
 import {drawScene} from '../src/render.js';
 
-test('six core day plants have wiki-matched anchor statistics',()=>{
- assert.equal(SEEDS.length,6);
+test('six day plants plus ten expansion plants have defined stats',()=>{
+ assert.equal(SEEDS.length,16);
+ assert.equal(getPlant('puff').cost,0);
+ assert.equal(getPlant('ice-shroom').instant.kind,'ice');
+ assert.equal(getPlant('threepeater').triple,true);
+ assert.equal(getPlant('torch').torchBonus,20);
+ assert.equal(getPlant('melon').splash.damage,27);
  assert.equal(getPlant('pea').cost,100);
  assert.equal(getPlant('pea').damage,20);
  assert.equal(getPlant('pea').interval,1.5);
@@ -18,12 +23,13 @@ test('six core day plants have wiki-matched anchor statistics',()=>{
  assert.equal(getPlant('cherry').cooldown,50);
 });
 test('fusion graph has no ambiguous input combinations',()=>{
- const keys=RECIPES.map(r=>fusionKey(...r.inputs));
+ const keys=RECIPES.map(r=>r.ordered?r.inputs.join('>'):fusionKey(...r.inputs));
  assert.equal(keys.length,new Set(keys).size);
+ assert.equal(RECIPES.length,46);
  for(const recipe of RECIPES){
   const [a,b]=recipe.inputs;
   assert.equal(recipeFor(a,b)?.id,recipe.id);
-  assert.equal(recipeFor(b,a)?.id,recipe.id);
+  if(!recipe.ordered)assert.equal(recipeFor(b,a)?.id,recipe.id);
   assert.ok(getPlant(recipe.id));
  }
  assert.equal(recipeFor('pea','sun').name,'豌豆向日葵');
@@ -36,9 +42,10 @@ test('advancing fusion does not mutate base plant catalog',()=>{
  assert.equal(p.hp,300);
  assert.equal(getPlant('pea').damage,20);
 });
-test('first level restricts seeds, later level unlocks base deck',()=>{
- assert.equal(unlockedSeeds(1).length,2);
- assert.equal(unlockedSeeds(5).length,6);
+test('levels unlock 6 through 16 seeds, free mode unlocks all',()=>{
+ assert.equal(unlockedSeeds(1).length,6);
+ assert.equal(unlockedSeeds(5).length,16);
+ assert.equal(unlockedSeeds(1,true).length,16);
  assert.equal(LEVELS.length,5);
 });
 test('planting and repeated plant fusion consume correct sun',()=>{
@@ -88,7 +95,7 @@ test('real render path completes without Canvas exceptions',()=>{
  const methods=new Set(['beginPath','roundRect','fill','stroke','arc','ellipse','moveTo','lineTo','strokeRect','fillRect','clearRect','save','restore','translate','scale','rotate','fillText']);
  const ctx=new Proxy({},{
    get(obj,key){
-     if(key==='createLinearGradient')return()=>({addColorStop(){}});
+     if(key==='createLinearGradient'||key==='createRadialGradient')return()=>({addColorStop(){}});
      if(methods.has(key))return()=>{};
      return obj[key];
    },
@@ -104,4 +111,45 @@ test('real render path completes without Canvas exceptions',()=>{
 test('zombies cannot move in paused game',()=>{
  const s=newGame(1);spawn(s,0,'normal',900);s.paused=true;
  tick(s,1);assert.equal(s.zombies[0].x,900);
+});
+
+test('ordered puff-shroom fusion and zero-cost stacking',()=>{
+ const s=newGame(5,true);
+ assert.ok(plantHere(s,2,1,'puff'));
+ s.cooldowns.puff=0;
+ assert.ok(plantHere(s,2,1,'puff'));
+ assert.equal(s.grid[2][1].stacks,2);
+ assert.equal(recipeFor('puff','pea').id,'puff-pea');
+ assert.equal(recipeFor('pea','puff'),null);
+ s.cooldowns.pea=0;
+ assert.ok(plantHere(s,2,1,'pea'));
+ assert.equal(s.grid[2][1].id,'puff-pea');
+});
+test('threepeater attacks adjacent rows',()=>{
+ const s=newGame(5,true);s.sun=1000;
+ assert.ok(plantHere(s,2,3,'threepeater'));
+ spawn(s,1,'normal',1160);s.skyTimer=999;s.spawnTimer=999;
+ for(let i=0;i<33;i++)tick(s,.05);
+ assert.ok(s.bullets.some(b=>b.row===1));
+ assert.ok(s.bullets.some(b=>b.row===2));
+ assert.ok(s.bullets.some(b=>b.row===3));
+});
+test('ice-shroom freezes all living zombies and disappears',()=>{
+ const s=newGame(5,true);s.sun=1000;
+ spawn(s,0,'normal',1100);spawn(s,4,'cone',1190);
+ assert.ok(plantHere(s,2,2,'ice-shroom'));
+ s.spawnTimer=999;s.skyTimer=999;
+ for(let i=0;i<15;i++)tick(s,.05);
+ assert.ok(s.zombies.every(z=>z.frozen>0));
+ assert.equal(s.grid[2][2],null);
+});
+test('spikeweed damages enemies while remaining passable',()=>{
+ const s=newGame(5,true);s.sun=1000;
+ assert.ok(plantHere(s,2,2,'spikeweed'));
+ const x=BOARD.x+(2.5)*BOARD.cw;
+ spawn(s,2,'normal',x);const before=s.zombies[0].hp;
+ s.spawnTimer=999;s.skyTimer=999;
+ for(let i=0;i<25;i++)tick(s,.05);
+ assert.ok(s.zombies[0].hp<before);
+ assert.ok(s.zombies[0].x<x);
 });
