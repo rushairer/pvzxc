@@ -60,5 +60,5 @@ export function createPlant(source,parts) {
     interval:source.interval || 2, production:source.production || 0,
     freeze:source.freeze || 0, burn:source.burn || 0, splash:source.splash || 0,
     double:source.double || false, lob:source.lob || false,
-    explosive:source.explosive || 0, timer:source.explosive ? .8 : source.production ? 6 : .65, age:0 };
+    explosive:source.explosive || 0, timer:source.explosive ? .8 : .65, sunTimer:source.production ? 6 : Infinity, age:0 };
 }
