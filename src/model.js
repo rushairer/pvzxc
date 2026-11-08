@@ -56,7 +56,14 @@ export function recipeFor(first,second){
   if(!a||!second)return null;
   return orderedRecipes.get(a+'>'+second)||recipes.get(fusionKey(a,second))||null;
 }
-export function costFor(id){return getPlant(id)?.cost||0;}
+export function costFor(id,depth=0){
+ const item=getPlant(id);
+ if(!item||depth>12)return 0;
+ if(typeof item.cost==='number')return item.cost;
+ if(Array.isArray(item.inputs))return item.inputs.reduce((sum,part)=>sum+costFor(part,depth+1),0);
+ return 0;
+}
+
 export function createPlant(source,parts){
   const spec=typeof source==='string'?getPlant(source):source;
   if(!spec)throw new TypeError('Unknown plant');
