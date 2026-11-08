@@ -83,3 +83,25 @@ test('sun collection increases balance',()=>{
 test('canvas render function is exported for browser use',()=>{
  assert.equal(typeof drawScene,'function');
 });
+
+test('real render path completes without Canvas exceptions',()=>{
+ const methods=new Set(['beginPath','roundRect','fill','stroke','arc','ellipse','moveTo','lineTo','strokeRect','fillRect','clearRect','save','restore','translate','scale','rotate','fillText']);
+ const ctx=new Proxy({},{
+   get(obj,key){
+     if(key==='createLinearGradient')return()=>({addColorStop(){}});
+     if(methods.has(key))return()=>{};
+     return obj[key];
+   },
+   set(obj,key,value){obj[key]=value;return true;}
+ });
+ const options={BOARD,SEEDS,RECIPES,LEVELS,best:1,getPlant,recipeFor};
+ const s=newGame(5);s.sun=999;
+ plantHere(s,2,2,'pea');spawn(s,2,'normal',1200);tick(s,.1);
+ assert.doesNotThrow(()=>drawScene(ctx,s,options));
+ assert.doesNotThrow(()=>drawScene(ctx,null,options));
+});
+
+test('zombies cannot move in paused game',()=>{
+ const s=newGame(1);spawn(s,0,'normal',900);s.paused=true;
+ tick(s,1);assert.equal(s.zombies[0].x,900);
+});
