@@ -119,8 +119,27 @@ export function drawClassicPlant(c,id,bob,age=0){
   eyes(c,-61+bob);return true;
  }
  if(id==='repeater-base'||id==='gatling-base'||id==='splitpea-base'||id==='snowpea'){
-  // Existing procedural pea art handles this after this function returns false.
-  return false;
+  const n=id==='gatling-base'?4:id==='snowpea'?1:2;
+  const icy=id==='snowpea',body=icy?'#78c9d9':'#7fbf59',dark=icy?'#4a94a5':'#4f8b39';
+  line(c,[[0,4],[0,-48+bob]],'#4c913f',10);
+  leaf(c,-23,-19,-.5);leaf(c,16,-26,-2.3);
+  const heads=[];
+  for(let i=0;i<n;i++){
+   const row=i%2,level=Math.floor(i/2);
+   const x=id==='splitpea-base'?(i===0?19:-22):12-level*18;
+   const y=-64+bob+row*21-level*3;
+   heads.push([x,y]);
+  }
+  for(const [x,y]of heads){
+   ellipse(c,x-8,y,20,19,grad(c,x-8,y,25,icy?'#d8f5fb':'#bbe586',body,dark));
+   const back=id==='splitpea-base'&&x<0;
+   ellipse(c,x+(back?-18:18),y+4,15,10,dark);
+   ellipse(c,x+(back?-21:21),y+4,9,7,body);
+   disk(c,x-13,y-7,3,'#29442e');
+  }
+  if(icy)for(let i=-1;i<=1;i++)line(c,[[i*14,-84+bob],[i*14+4,-96+bob]],'#d9ffff',4);
+  if(n>=4)ellipse(c,0,-102+bob,17,9,'#567d35');
+  return true;
  }
  return false;
 }
