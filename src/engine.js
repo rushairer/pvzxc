@@ -159,6 +159,41 @@ function updatePlant(s,p,r,c,dt){
  const spec=getPlant(p.id),{x,y}=center(r,c);
  if(!spec)return;
  p.age+=dt;
+ p.boostLeft=Math.max(0,(p.boostLeft||0)-dt);
+ if(spec.coinVacuum){
+  for(let i=s.suns.length-1;i>=0;i--){const u=s.suns[i];s.sun+=u.amount;s.totalSuns+=u.amount;s.suns.splice(i,1);}
+ }
+ if(spec.growAfter&&p.age>spec.growAfter)p.grown=true;
+ if(spec.tangle){
+  const victim=s.zombies.find(z=>!z.charmed&&z.hp>0&&z.row===r&&Math.abs(z.x-x)<spec.tangle.range*BOARD.cw);
+  if(victim){victim.hp-=spec.tangle.damage;s.grid[r][c]=null;particles(s,x,y,'#73d9ce',14);return;}
+ }
+ if(spec.gloom){
+  p.gloomTimer=(p.gloomTimer??0)-dt;
+  if(p.gloomTimer<=0){
+   const targets=s.zombies.filter(z=>!z.charmed&&z.hp>0&&Math.hypot(z.x-x,(z.row-r)*BOARD.ch)<spec.gloom.range*BOARD.cw);
+   if(targets.length){for(const z of targets){
+    z.hp-=spec.gloom.damage;
+    if(spec.freezeAura)z.slow=Math.max(z.slow,spec.freezeAura);
+    if(spec.burnAura)z.burn=Math.max(z.burn,spec.burnAura);
+    if(spec.poisonAura)z.poison=Math.max(z.poison,spec.poisonAura);
+   }
+   p.gloomTimer=spec.gloom.interval;particles(s,x,y-40,'#bba1e9',16);
+   }else p.gloomTimer=.15;
+  }
+ }
+ if(spec.cannon){
+  p.cannonTimer-=dt;
+  if(p.cannonTimer<=0){
+   const targets=s.zombies.filter(z=>!z.charmed&&z.hp>0);
+   if(targets.length){
+    const victim=targets.reduce((best,z)=>s.zombies.filter(other=>other.hp>0&&Math.hypot(other.x-z.x,(other.row-z.row)*BOARD.ch)<spec.cannon.radius*BOARD.cw).length>
+    s.zombies.filter(other=>other.hp>0&&Math.hypot(other.x-best.x,(other.row-best.row)*BOARD.ch)<spec.cannon.radius*BOARD.cw).length?z:best,targets[0]);
+    boom(s,victim.x,victim.y,spec.cannon.damage,spec.cannon.radius);
+    p.cannonTimer=spec.cannon.interval;particles(s,victim.x,victim.y-40,'#ffd173',36);
+   }else p.cannonTimer=.3;
+  }
+ }
  if(spec.coinProduction){
   p.coinTimer-=dt;
   if(p.coinTimer<=0){
@@ -197,9 +232,10 @@ function updatePlant(s,p,r,c,dt){
  if(spec.sun){
   p.sunTimer-=dt;
   if(p.sunTimer<=0){
-   const num=Math.max(1,Math.floor(spec.sun/25));
-   for(let n=0;n<num;n++)addSun(s,x+(n-(num-1)/2)*24,y-45,25);
-   p.sunTimer+=spec.sunInterval||25;
+   const amount=p.grown?25:spec.sun;
+   const num=Math.max(1,Math.ceil(amount/25));
+   for(let n=0;n<num;n++)addSun(s,x+(n-(num-1)/2)*24,y-45,amount<num*25?amount:25);
+   p.sunTimer+=(spec.sunInterval||25)*(p.boostLeft>0?.7:1);
   }
  }
  if(spec.instant){
@@ -284,7 +320,7 @@ function updatePlant(s,p,r,c,dt){
    if(!afraid&&target){
     if(spec.star)fireStars(s,p,spec,r,c);
     else shoot(s,p,spec,r,c);
-    p.fireTimer=(spec.interval||1.5)*(spec.accelerateNear?.7:1);
+    p.fireTimer=(spec.interval||1.5)*(spec.accelerateNear?.7:1)*(p.boostLeft>0?.55:1);
    }else p.fireTimer=0;
   }
  }
