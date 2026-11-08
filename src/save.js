@@ -1,4 +1,5 @@
 import {SEEDS,RECIPES,getPlant,createPlant} from './model.js';
+import {DEFAULT_DECK,deckFromIds} from './deck.js';
 import {newGame,ZOMBIE_TYPES} from './engine.js';
 
 export const SAVE_VERSION=1;
@@ -62,14 +63,22 @@ export function makeSnapshot(s,now=Date.now()){
   kills:s.kills,spawnCount:s.spawnCount,spawnTimer:s.spawnTimer,skyTimer:s.skyTimer,
   wave:s.wave,waveClock:s.waveClock,flags:s.flags,uid:s.uid,solved:Array.from(s.solved),
   totalSuns:s.totalSuns,page:s.page,lastPlanted:s.lastPlanted,record:s.record,
-  quickRecipe:s.quickRecipe,selected:s.selected
+  quickRecipe:s.quickRecipe,selected:s.selected,
+  deckIds:s.decks.map(p=>p.id),tool:s.tool,gloveMode:s.gloveMode,
+  gloveCooldown:s.gloveCooldown,glovePickup:s.glovePickup
  };
  return {version:SAVE_VERSION,savedAt:now,state:clonePlain(source)};
 }
 export function restoreSnapshot(snapshot){
  if(!snapshot||snapshot.version!==SAVE_VERSION||!snapshot.state||snapshot.state.mode!=='endless')
   throw new Error('存档格式不受支持');
- const raw=asObject(snapshot.state),s=newGame();
+ const raw=asObject(snapshot.state);
+ // Old saves from Alpha 0.4 lacked a restricted deck; migrate them to a
+ // playable ten-card legacy selection while keeping battlefield progression.
+ let deckIds=DEFAULT_DECK;
+ try{if(Array.isArray(raw.deckIds))deckIds=deckFromIds(raw.deckIds).map(p=>p.id);}
+ catch{throw new Error('存档携带的十张植物卡无效');}
+ const s=newGame(deckIds);
  if(!Array.isArray(raw.grid)||raw.grid.length!==5||raw.grid.some(r=>!Array.isArray(r)||r.length!==9))
   throw new Error('存档草坪结构无效');
  s.grid=raw.grid.map(row=>row.map(worldPlant));
@@ -97,8 +106,16 @@ export function restoreSnapshot(snapshot){
  s.totalSuns=integer(raw.totalSuns);s.page=integer(raw.page,0,0,Math.ceil(SEEDS.length/7)-1);
  s.lastPlanted=getPlant(raw.lastPlanted)?.id||null;
  s.quickRecipe=RECIPES.some(recipe=>recipe.id===raw.quickRecipe)?raw.quickRecipe:null;
- s.selected=getPlant(raw.selected)?.id||null;
- if(s.selected&&!SEEDS.some(seed=>seed.id===s.selected)&&s.selected!==s.quickRecipe)s.selected=null;
+ s.selected=s.decks.some(p=>p.id===raw.selected)?raw.selected:null;
+ s.quickRecipe=s.decks.some(p=>p.id===raw.quickRecipe)?raw.quickRecipe:null;
+ s.tool=['seed','shovel','glove'].includes(raw.tool)?raw.tool:'seed';
+ s.shovel=s.tool==='shovel';
+ s.gloveMode=raw.gloveMode==='zombie'?'zombie':'plant';
+ s.gloveCooldown={
+  plant:number(raw.gloveCooldown?.plant,0,0,10),
+  zombie:number(raw.gloveCooldown?.zombie,0,0,30)
+ };
+ s.glovePickup=null; // pending click sequences must be restarted after loading
  s.record=integer(raw.record,s.wave,0);s.solved=new Set((Array.isArray(raw.solved)?raw.solved:[]).filter(x=>RECIPES.some(r=>r.id===x)));
  s.phase=raw.phase==='lost'?'lost':'playing';s.paused=false;s.hover=null;
  s.message='存档已载入 · 第 '+s.wave+' 波';s.messageLeft=4;
