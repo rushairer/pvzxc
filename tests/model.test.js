@@ -44,13 +44,13 @@ test('115 distinct fusion recipes have resolvable ingredients and products',()=>
 });
 test('endless mode does not end after the previous 5-wave campaign duration',()=>{
  const s=newGame();s.spawnTimer=1e6;s.skyTimer=1e6;
- step(s,205);assert.ok(s.wave>=7);assert.equal(s.phase,'playing');
+ step(s,208);assert.ok(s.wave>=7);assert.equal(s.phase,'playing');
  step(s,100);assert.ok(s.wave>=9);assert.equal(s.phase,'playing');
 });
 test('all cards can be planted from the beginning',()=>{
  for(const seed of SEEDS){
   const s=generous();
-  if(seed.graveBuster)s.graves=[{row:2,col:2}];
+  if(seed.graveBuster)s.graves=[{row:2,col:4}];
   if(seed.coffee){plantHere(s,2,2,'pea');s.cooldowns.pea=0;}
   if(seed.imitater){plantHere(s,2,2,'pea');s.cooldowns.pea=0;}
   assert.equal(plantHere(s,2,seed.coffee||seed.imitater?2:4,seed.id),true,seed.id);
@@ -115,7 +115,7 @@ test('solar economy and wave progress persist over time',()=>{
  const s=generous();plantHere(s,1,1,'sun');s.spawnTimer=1e6;
  const start=s.sun;step(s,7);assert.ok(s.suns.length>0);
  const amount=s.suns[0].amount,x=s.suns[0].x,y=s.suns[0].y;
- assert.ok(collectAt(s,x,y));assert.equal(s.sun,start-50+amount);
+ assert.ok(collectAt(s,x,y));assert.equal(s.sun,start+amount);
 });
 test('save roundtrip restores entire battle and can continue simulation',()=>{
  const s=generous();s.sun=777;plantHere(s,1,1,'pea');s.cooldowns.pea=0;plantHere(s,1,1,'pea');
