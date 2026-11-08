@@ -94,31 +94,61 @@ function renderChosen(){
  for(let i=0;i<DECK_SIZE;i++){
   const id=deckChoice[i],item=id?getPlant(id):null;
   const btn=document.createElement('button');btn.type='button';btn.className='chosen-card';
-  btn.textContent=item?(i+1)+'. '+item.name:(i+1)+'. 空槽位';
+  const name=document.createElement('span');name.className='chosen-name';
+  name.textContent=item?(i+1)+'. '+item.name:(i+1)+'. 空槽位';
+  btn.append(name);
+  if(item){
+   const price=document.createElement('span');price.className='chosen-price';
+   price.textContent='☀ '+costFor(item.id)+' 阳光';
+   btn.append(price);
+   btn.setAttribute('aria-label','移除 '+item.name+'，费用 '+costFor(item.id)+' 阳光');
+  }
   btn.disabled=!item;
-  btn.addEventListener('click',()=>{deckChoice.splice(i,1);renderChosen();renderLibrary();});
+  btn.addEventListener('click',()=>{
+   deckChoice.splice(i,1);
+   renderChosen();
+   syncLibrarySelection();
+  });
   chosen.append(btn);
  }
  $('deckConfirm').disabled=deckChoice.length!==DECK_SIZE;
  $('deckConfirm').textContent=deckChoice.length===DECK_SIZE?'▶ 开始无尽 · 10张已就绪':'选满 '+deckChoice.length+' / 10';
+}
+// Selecting a plant must not recreate the scrolling library: doing so would
+// drop focus and jump players back to the first row on every click.
+function syncLibrarySelection(){
+ const selected=new Set(deckChoice),full=deckChoice.length>=DECK_SIZE;
+ for(const btn of $('deckLibrary').children){
+  const picked=selected.has(btn.dataset.plantId);
+  if(picked)btn.classList.add('picked');
+  else btn.classList.remove('picked');
+  btn.disabled=full&&!picked;
+  btn.setAttribute('aria-pressed',String(picked));
+  btn.children[0].textContent=(picked?'✓ ':'')+btn.dataset.plantName;
+ }
 }
 function renderLibrary(){
  const root=$('deckLibrary');root.replaceChildren();
  const matches=seedSelection($('deckSearch').value,$('deckCategory').value);
  for(const item of matches){
   const btn=document.createElement('button');btn.type='button';btn.className='library-card';
-  const existing=deckChoice.includes(item.id);btn.disabled=deckChoice.length===DECK_SIZE&&!existing;
-  if(existing)btn.classList.add('picked');
-  const title=document.createElement('strong');title.textContent=(existing?'✓ ':'')+item.name;
-  const detail=document.createElement('small');detail.textContent='☀'+costFor(item.id)+' · '+(item.inputs?'融合':'基础')+' · '+(item.desc||'');
-  btn.append(title,detail);
+  btn.dataset.plantId=item.id;
+  btn.dataset.plantName=item.name;
+  const title=document.createElement('strong');title.textContent=item.name;
+  const price=document.createElement('span');price.className='library-price';
+  price.textContent='☀ '+costFor(item.id)+' 阳光';
+  const detail=document.createElement('small');
+  detail.textContent=(item.inputs?'融合':'基础')+' · '+(item.desc||'');
+  btn.append(title,price,detail);
   btn.addEventListener('click',()=>{
    if(deckChoice.includes(item.id))deckChoice=deckChoice.filter(id=>id!==item.id);
    else if(deckChoice.length<DECK_SIZE)deckChoice.push(item.id);
-   renderChosen();renderLibrary();
+   renderChosen();
+   syncLibrarySelection();
   });
   root.append(btn);
  }
+ syncLibrarySelection();
 }
 function openDeck(){
  deckChoice=[];scene='selecting';deckOverlay.classList.add('is-visible');
@@ -133,7 +163,7 @@ $('closeDeck').addEventListener('click',()=>{closeDeck();if(scene==='selecting')
 $('deckSearch').addEventListener('input',renderLibrary);
 $('deckCategory').addEventListener('change',renderLibrary);
 $('deckCategory').addEventListener('input',renderLibrary);
-$('deckDefault').addEventListener('click',()=>{deckChoice=DEFAULT_DECK.slice();renderChosen();renderLibrary();});
+$('deckDefault').addEventListener('click',()=>{deckChoice=DEFAULT_DECK.slice();renderChosen();syncLibrarySelection();});
 $('deckConfirm').addEventListener('click',()=>{
  if(deckChoice.length!==DECK_SIZE)return;
  start();
