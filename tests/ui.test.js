@@ -34,9 +34,17 @@ test('the real browser entrypoint supports endless start, save, load and catalog
   const el=id=>elements.get(id);
   assert.equal(el('primaryAction').textContent,'▶ 新建无尽战场');
   assert.equal(el('freeAction').disabled,true);
-  assert.equal(el('recipeGrid').children.length,115);
+  assert.equal(el('recipeGrid').children.length,164);
   el('primaryAction').fire('click');
+  assert.equal(el('deckOverlay').classList.contains('is-visible'),true);
+  assert.equal(el('deckSelected').children.length,10);
+  assert.equal(el('deckConfirm').disabled,true);
+  assert.equal(el('deckLibrary').children.length,213);
+  el('deckDefault').fire('click');
+  assert.equal(el('deckConfirm').disabled,false);
+  el('deckConfirm').fire('click');
   assert.equal(el('mainOverlay').classList.contains('is-visible'),false);
+  assert.equal(el('deckOverlay').classList.contains('is-visible'),false);
   el('quickSave').fire('click');
   assert.ok(store.has('pvzxc.endless.v1.slot1'));
   el('quickLoad').fire('click');
@@ -57,13 +65,19 @@ test('the real browser entrypoint supports endless start, save, load and catalog
   el('recipeSearch').fire('input');
   assert.ok(el('recipeGrid').children.filter(c=>!c.hidden).length>0);
   el('recipeSearch').value='';el('recipeSearch').fire('input');
-  el('recipeGrid').children[0].children[2].fire('click');
-  assert.equal(el('guideOverlay').classList.contains('is-visible'),false);
-  el('game').fire('pointerdown',{clientX:260,clientY:260});
-  el('quickSave').fire('click');
-  assert.equal(JSON.parse(store.get('pvzxc.endless.v1.slot1')).state.grid[0][0].id,'repeater');
   el('closeGuide').fire('click');
   assert.equal(el('guideOverlay').classList.contains('is-visible'),false);
+  // Plant in slot 1 (sunflower) and move it using the two-step glove tool.
+  el('game').fire('pointerdown',{clientX:220,clientY:20});
+  el('game').fire('pointerdown',{clientX:240,clientY:258});
+  el('game').fire('pointerdown',{clientX:860,clientY:55});
+  el('game').fire('pointerdown',{clientX:240,clientY:258});
+  el('game').fire('pointerdown',{clientX:365,clientY:366});
+  el('quickSave').fire('click');
+  const state=JSON.parse(store.get('pvzxc.endless.v1.slot1')).state;
+  assert.equal(state.deckIds.length,10);
+  assert.equal(state.grid[1][1].id,'sun');
+  assert.equal(state.gloveCooldown.plant,10);
  }finally{
   for(const key of ['document','window','localStorage','requestAnimationFrame'])delete globalThis[key];
  }
