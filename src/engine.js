@@ -1,30 +1,18 @@
 import {SEEDS,RECIPES,getPlant,recipeFor,createPlant,unlockedSeeds} from './model.js';
 export const BOARD={x:184,y:188,w:1053,h:540,rows:5,cols:9,cw:117,ch:108};
-export const LEVELS=[
-  {name:'草坪序章',intro:'先用向日葵积攒阳光，再用豌豆射手守住草坪。',waves:3,length:115,initialSun:150,spawn:11,zombieMax:1},
-  {name:'草坪融合',intro:'将植物种到其他植物上，体验真正的双发与产光融合。',waves:4,length:145,initialSun:175,spawn:9,zombieMax:2},
-  {name:'坚果前线',intro:'坚果抵御尸潮；结合豌豆射手可得到坚果射手。',waves:4,length:165,initialSun:200,spawn:8,zombieMax:3},
-  {name:'樱桃风暴',intro:'樱桃炸弹会立即引爆。注意冷却时间与资源。',waves:5,length:175,initialSun:200,spawn:7.2,zombieMax:3},
-  {name:'融合试炼',intro:'利用新解锁的植物、元素能力和进阶融合抵挡大波僵尸。',waves:5,length:185,initialSun:250,spawn:6.4,zombieMax:4}
-];
-export const ZOMBIE_TYPES={
-  normal:{name:'普通僵尸',hp:270,speed:19,attack:100,period:1.0},
-  cone:{name:'路障僵尸',hp:640,speed:19,attack:100,period:1.0},
-  bucket:{name:'铁桶僵尸',hp:1370,speed:19,attack:100,period:1.0},
-  runner:{name:'路障快跑僵尸',hp:270,speed:30,attack:100,period:1.0},
-  balloon:{name:'气球僵尸',hp:270,speed:24,attack:100,period:1.0,airborne:true},
-  newspaper:{name:'读报僵尸',hp:470,speed:17,attack:100,period:1.0}
-};
+import {CLASSIC_ZOMBIES} from './classic.js';
+export const ENDLESS={name:'融合无尽',initialSun:500,waveDuration:34,initialSpawn:9,minimumSpawn:1.25};
+export const ZOMBIE_TYPES=CLASSIC_ZOMBIES;
+export const ZOMBIE_IDS=Object.freeze(Object.keys(CLASSIC_ZOMBIES));
 let seedIndex=1;
 function rnd(a,b){return a+Math.random()*(b-a);}
-export function newGame(level=1,freeMode=false){
- const def=LEVELS[Math.max(0,Math.min(LEVELS.length-1,level-1))];
- return {level,def,freeMode,phase:'playing',paused:false,t:0,sun:freeMode?1000:def.initialSun,
-  grid:Array.from({length:5},()=>Array(9).fill(null)), zombies:[],bullets:[],suns:[],effects:[],mowers:Array(5).fill(true),
-  craters:[],coins:0,screenFlash:0,windLeft:0,
-  decks:unlockedSeeds(level,freeMode),cooldowns:{},selected:null,shovel:false,hover:null,page:0,
-  kills:0,spawnCount:0,spawnTimer:9,skyTimer:8,wave:1,flags:0,message:def.intro,messageLeft:6,
-  shake:0,uid:0,winTimer:0,totalSuns:0,solved:new Set(),pendingGameOver:false};
+export function newGame(){
+ return {mode:'endless',phase:'playing',paused:false,t:0,sun:ENDLESS.initialSun,
+  grid:Array.from({length:5},()=>Array(9).fill(null)),zombies:[],bullets:[],suns:[],effects:[],
+  mowers:Array(5).fill(true),craters:[],coins:0,screenFlash:0,windLeft:0,
+  decks:unlockedSeeds(),cooldowns:{},selected:null,shovel:false,hover:null,page:0,lastPlanted:null,
+  kills:0,spawnCount:0,spawnTimer:9,skyTimer:8,wave:1,flags:0,message:'无尽融合开始！49种植物与全部配方已开放。',messageLeft:5,
+  shake:0,uid:0,totalSuns:0,solved:new Set(),waveClock:0,record:0,failed:false};
 }
 export function message(s,t,seconds=2.8){s.message=t;s.messageLeft=seconds;}
 function center(r,c){return{x:BOARD.x+(c+.5)*BOARD.cw,y:BOARD.y+(r+.55)*BOARD.ch};}
@@ -83,9 +71,12 @@ export function collectAt(s,x,y){
 }
 export function spawn(s,row,type='normal',x=1418){
  const spec=ZOMBIE_TYPES[type]||ZOMBIE_TYPES.normal;
- s.zombies.push({id:s.uid++,row,x,y:BOARD.y+(row+.55)*BOARD.ch,type,hp:spec.hp,maxHp:spec.hp,speed:spec.speed,
-  airborne:!!spec.airborne,charmed:false,armor:type==='bucket'?1100:type==='cone'?370:0,
-  attack:spec.attack,period:spec.period,biting:0,slow:0,burn:0,dead:false,anim:rnd(0,6)});
+ const actualRow=Math.min(4,Math.max(0,Math.trunc(row)));
+ s.zombies.push({id:s.uid++,row:actualRow,x,y:BOARD.y+(actualRow+.55)*BOARD.ch,type,
+  hp:spec.hp,maxHp:spec.hp,speed:spec.speed,baseSpeed:spec.speed,
+  airborne:!!spec.airborne,charmed:false,armor:spec.armor||0,attack:spec.attack,period:spec.period,
+  biting:0,slow:0,burn:0,dead:false,anim:rnd(0,6),specialTimer:spec.bungee?.5:spec.summon?4:spec.catapult?2.6:3,
+  jumped:false,returning:false,thrown:false,summoned:0,iceDamage:0,shield:!!spec.shield});
 }
 function rowFire(s,row,damage){
  for(const z of s.zombies)if(z.row===row&&z.hp>0)z.hp-=damage;
