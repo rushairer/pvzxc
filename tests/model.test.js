@@ -95,7 +95,7 @@ test('canvas render function is exported for browser use',()=>{
 });
 
 test('real render path completes without Canvas exceptions',()=>{
- const methods=new Set(['beginPath','roundRect','fill','stroke','arc','ellipse','moveTo','lineTo','strokeRect','fillRect','clearRect','save','restore','translate','scale','rotate','fillText']);
+ const methods=new Set(['beginPath','closePath','roundRect','fill','stroke','arc','ellipse','moveTo','lineTo','strokeRect','fillRect','clearRect','save','restore','translate','scale','rotate','fillText']);
  const ctx=new Proxy({},{
    get(obj,key){
      if(key==='createLinearGradient'||key==='createRadialGradient')return()=>({addColorStop(){}});
@@ -257,7 +257,7 @@ test('garlic redirects zombies to another lane',()=>{
 });
 
 test('all 29 base sprites and 68 fusion sprites can render in the live battle',()=>{
- const methods=new Set(['beginPath','roundRect','fill','stroke','arc','ellipse','moveTo','lineTo','strokeRect','fillRect','clearRect','save','restore','translate','scale','rotate','fillText']);
+ const methods=new Set(['beginPath','closePath','roundRect','fill','stroke','arc','ellipse','moveTo','lineTo','strokeRect','fillRect','clearRect','save','restore','translate','scale','rotate','fillText']);
  const ctx=new Proxy({},{
   get(obj,key){
    if(key==='createLinearGradient'||key==='createRadialGradient')return()=>({addColorStop(){}});
