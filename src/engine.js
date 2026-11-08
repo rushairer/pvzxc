@@ -1,4 +1,5 @@
 import {SEEDS,RECIPES,getPlant,recipeFor,createPlant,unlockedSeeds,costFor} from './model.js';
+import {deckFromIds,DEFAULT_DECK} from './deck.js';
 export const BOARD={x:184,y:188,w:1053,h:540,rows:5,cols:9,cw:117,ch:108};
 import {CLASSIC_ZOMBIES} from './classic.js';
 import {applySpecialZombie,pickEndlessEnemy} from './zombie-special.js';
@@ -7,12 +8,14 @@ export const ZOMBIE_TYPES=CLASSIC_ZOMBIES;
 export const ZOMBIE_IDS=Object.freeze(Object.keys(CLASSIC_ZOMBIES));
 let seedIndex=1;
 function rnd(a,b){return a+Math.random()*(b-a);}
-export function newGame(){
+export function newGame(deckIds=DEFAULT_DECK){
+ const chosen=deckFromIds(deckIds);
  return {mode:'endless',phase:'playing',paused:false,t:0,sun:ENDLESS.initialSun,
   grid:Array.from({length:5},()=>Array(9).fill(null)),zombies:[],bullets:[],suns:[],effects:[],
   mowers:Array(5).fill(true),craters:[],coins:0,screenFlash:0,windLeft:0,
-  decks:unlockedSeeds(),cooldowns:{},selected:null,shovel:false,hover:null,page:0,lastPlanted:null,quickRecipe:null,graves:[],
-  kills:0,spawnCount:0,spawnTimer:9,skyTimer:8,wave:1,flags:0,message:'无尽融合开始！49种植物与全部配方已开放。',messageLeft:5,
+  decks:chosen,cooldowns:{},selected:null,shovel:false,hover:null,page:0,lastPlanted:null,quickRecipe:null,graves:[],
+  tool:'seed',gloveMode:'plant',gloveCooldown:{plant:0,zombie:0},glovePickup:null,
+  kills:0,spawnCount:0,spawnTimer:9,skyTimer:8,wave:1,flags:0,message:'无尽融合开始！本局10张植物卡组已锁定。',messageLeft:5,
   shake:0,uid:0,totalSuns:0,solved:new Set(),waveClock:0,record:0,failed:false};
 }
 export function message(s,t,seconds=2.8){s.message=t;s.messageLeft=seconds;}
@@ -34,7 +37,7 @@ export function plantHere(s,row,col,id){
    s.grid[row][col]=null;s.shovel=false;message(s,'植物已移除');return true;
  }
  const selected=getPlant(id);
- if(!selected||(!s.decks.some(x=>x.id===id)&&!(s.quickRecipe===id&&Array.isArray(selected.inputs))))return false;
+ if(!selected||!s.decks.some(x=>x.id===id))return false;
  if(s.cooldowns[id]>0){message(s,'植物尚在冷却');return false;}
  const imitation=id==='imitater'?getPlant(s.lastPlanted):null;
  if(id==='imitater'&&(!imitation||imitation.id==='imitater')){message(s,'先成功种植一种植物，再使用模仿者');return false;}
@@ -82,6 +85,72 @@ export function plantHere(s,row,col,id){
  if((fusion||item).onPlantRowFire)for(let rr=Math.max(0,row-1);rr<=Math.min(4,row+1);rr++)rowFire(s,rr,300);
  
  return true;
+}
+export function setTool(s,tool='seed'){
+ if(!['seed','shovel','glove'].includes(tool))return false;
+ s.tool=s.tool===tool&&tool!=='seed'?'seed':tool;
+ s.shovel=s.tool==='shovel';s.glovePickup=null;
+ if(s.tool!=='seed')s.selected=null;
+ return true;
+}
+export function switchGloveMode(s){
+ s.gloveMode=s.gloveMode==='plant'?'zombie':'plant';
+ s.glovePickup=null;
+ s.tool='glove';s.shovel=false;s.selected=null;
+ return s.gloveMode;
+}
+export function cancelTool(s){s.tool='seed';s.shovel=false;s.glovePickup=null;s.selected=null;}
+function emptyCell(s,row,col){
+ return row>=0&&row<BOARD.rows&&col>=0&&col<BOARD.cols&&!s.grid[row][col]&&!s.graves?.some(g=>g.row===row&&g.col===col)&&!s.craters.some(k=>k.row===row&&k.col===col&&k.life>0);
+}
+export function gloveAction(s,row,col){
+ if(s.phase!=='playing'||s.paused||s.tool!=='glove')return false;
+ if(row<0||row>=BOARD.rows||col<0||col>=BOARD.cols)return false;
+ const mode=s.gloveMode||'plant',cooldown=s.gloveCooldown?.[mode]||0;
+ if(cooldown>0){message(s,'手套冷却 '+cooldown.toFixed(1)+' 秒');return false;}
+ const x=BOARD.x+(col+.5)*BOARD.cw,y=BOARD.y+(row+.55)*BOARD.ch;
+ const pickup=s.glovePickup;
+ if(mode==='plant'){
+  if(!pickup){
+   const plant=s.grid[row][col];if(!plant){message(s,'请先选择一株植物');return false;}
+   s.glovePickup={kind:'plant',row,col};message(s,'手套已抓起 '+plant.name+'，请选择目标格');return true;
+  }
+  if(pickup.kind!=='plant'){s.glovePickup=null;return false;}
+  const plant=s.grid[pickup.row]?.[pickup.col];
+  if(!plant){s.glovePickup=null;message(s,'原位置植物已消失');return false;}
+  if(row===pickup.row&&col===pickup.col){s.glovePickup=null;message(s,'取消手套搬运');return true;}
+  if(s.craters.some(k=>k.row===row&&k.col===col&&k.life>0)||s.graves?.some(g=>g.row===row&&g.col===col)){
+   message(s,'目标格不可放置植物');return false;
+  }
+  const other=s.grid[row][col];
+  const recipe=other?recipeFor(other.id,plant.id):null;
+  if(other&&!recipe&&!other.platform){message(s,'目标植物不支持该融合');return false;}
+  if(recipe){
+   s.grid[row][col]=createPlant(recipe,[...other.parts,...plant.parts]);
+   s.solved.add(recipe.id);message(s,'手套融合成功：'+recipe.name,3);
+   particles(s,x,y-45,'#ffcf78',24);
+  }else{
+   s.grid[row][col]=plant;
+   message(s,'植物搬运完成',2);
+   particles(s,x,y-30,'#bce79d',12);
+  }
+  s.grid[pickup.row][pickup.col]=null;
+  const isShort=plant.stacks>1||plant.platform||getPlant(plant.id)?.low;
+  s.gloveCooldown.plant=isShort?10/3:10;
+  s.glovePickup=null;return true;
+ }
+ if(!pickup){
+  const candidate=s.zombies.filter(z=>z.hp>0&&!z.dead&&z.row===row)
+   .sort((a,b)=>Math.abs(a.x-x)-Math.abs(b.x-x))[0];
+  if(!candidate||Math.abs(candidate.x-x)>75){message(s,'请点击要搬运的僵尸所在格');return false;}
+  if(['zomboss','garg'].includes(candidate.type)){message(s,'当前无法用僵尸手套搬运巨人或领袖');return false;}
+  s.glovePickup={kind:'zombie',id:candidate.id};message(s,'已抓起 '+(ZOMBIE_TYPES[candidate.type]?.name||'僵尸')+'，选择投放位置');return true;
+ }
+ const zombie=s.zombies.find(z=>z.id===pickup.id&&z.hp>0);
+ if(!zombie){s.glovePickup=null;message(s,'僵尸已经消失');return false;}
+ zombie.row=row;zombie.x=x;zombie.y=y;zombie.biting=0;
+ s.gloveCooldown.zombie=zombie.charmed?15:30;
+ s.glovePickup=null;message(s,'僵尸手套搬运完成');particles(s,x,y-60,'#d4abe3',20);return true;
 }
 export function collectAt(s,x,y){
  for(let i=s.suns.length-1;i>=0;i--){
@@ -454,6 +523,7 @@ export function tick(s,dt){
  for(const crater of s.craters)crater.life-=dt;
  s.craters=s.craters.filter(crater=>crater.life>0);
  for(const id of Object.keys(s.cooldowns))s.cooldowns[id]=Math.max(0,(s.cooldowns[id]||0)-dt);
+ for(const type of ['plant','zombie'])s.gloveCooldown[type]=Math.max(0,(s.gloveCooldown?.[type]||0)-dt);
  s.skyTimer-=dt;
  if(s.skyTimer<=0){addSun(s,rnd(BOARD.x+45,BOARD.x+BOARD.w-45),rnd(BOARD.y+70,BOARD.y+BOARD.h-30),25,true);s.skyTimer=rnd(7,11);}
  s.waveClock+=dt;
