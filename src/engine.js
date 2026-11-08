@@ -453,7 +453,7 @@ export function tick(s,dt){
  s.windLeft=Math.max(0,s.windLeft-dt);
  for(const crater of s.craters)crater.life-=dt;
  s.craters=s.craters.filter(crater=>crater.life>0);
- for(const p of s.decks)s.cooldowns[p.id]=Math.max(0,(s.cooldowns[p.id]||0)-dt);
+ for(const id of Object.keys(s.cooldowns))s.cooldowns[id]=Math.max(0,(s.cooldowns[id]||0)-dt);
  s.skyTimer-=dt;
  if(s.skyTimer<=0){addSun(s,rnd(BOARD.x+45,BOARD.x+BOARD.w-45),rnd(BOARD.y+70,BOARD.y+BOARD.h-30),25,true);s.skyTimer=rnd(7,11);}
  s.waveClock+=dt;
