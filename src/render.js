@@ -167,7 +167,7 @@ function paintPlant(c,p,x,y,scale=1,time=0){
  const isSun=icon==='sun'||icon==='twin'||icon==='pea-sun'||icon==='sun-cherry'||icon==='sun-wall'||icon==='sun-potato'||icon==='sun-chomper';
  const isChomper=icon.includes('chomper');
  const isCherry=icon.includes('cherry')&&!isChomper;
- if(drawClassicPlant(c,p.id,bob,p.age||time)){
+ if(drawClassicPlant(c,p.id,bob,p.age||time)||drawClassicPlant(c,icon,bob,p.age||time)){
   // Fully distinct portraits for classic seed types.
  }else if(drawThirdWavePlant(c,icon,bob,p.age||time)){
   // Third-wave plants have individual procedural high-resolution artwork.
