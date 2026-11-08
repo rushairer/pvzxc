@@ -80,6 +80,7 @@ export function plantHere(s,row,col,id){
    s.solved.add(fusion.id);
    message(s,'融合成功：'+fusion.name,3);
  }
+ if((fusion||item).coverOnPlant)created.cover=(fusion||item).coverOnPlant;
  s.grid[row][col]=created;s.sun-=price;s.cooldowns[id]=selected.cooldown??14;s.lastPlanted=id;
  const {x,y}=center(row,col);particles(s,x,y-26,fusion?'#ffe17a':'#d0ef84',fusion?22:8);
  if((fusion||item).onPlantRowFire)for(let rr=Math.max(0,row-1);rr<=Math.min(4,row+1);rr++)rowFire(s,rr,300);
@@ -231,6 +232,40 @@ function updatePlant(s,p,r,c,dt){
  if(!spec)return;
  p.age+=dt;
  p.boostLeft=Math.max(0,(p.boostLeft||0)-dt);
+ // Passive element traits remain functional even on defense-only fusions.
+ if(spec.freezeAura||spec.burnAura||spec.poisonAura){
+  p.auraTimer=(p.auraTimer??0)-dt;
+  if(p.auraTimer<=0){
+   const radius=(spec.gloom?.range||1.25)*BOARD.cw;
+   for(const z of s.zombies){
+    if(z.hp<=0||z.charmed||Math.hypot(z.x-x,(z.row-r)*BOARD.ch)>radius)continue;
+    if(spec.freezeAura)z.slow=Math.max(z.slow,spec.freezeAura);
+    if(spec.burnAura)z.burn=Math.max(z.burn,spec.burnAura);
+    if(spec.poisonAura)z.poison=Math.max(z.poison,spec.poisonAura);
+   }
+   p.auraTimer=.75;
+  }
+ }
+ if(spec.windPulse){
+  p.windTimer=(p.windTimer??spec.windPulse.interval)-dt;
+  if(p.windTimer<=0){
+   const airborne=s.zombies.filter(z=>z.hp>0&&!z.charmed&&z.airborne);
+   for(const z of airborne){z.hp-=180;particles(s,z.x,z.y-95,'#c4eeed',6);}
+   if(airborne.length)s.windLeft=.8;
+   p.windTimer=spec.windPulse.interval;
+  }
+ }
+ if(spec.gravePulse){
+  p.graveTimer=(p.graveTimer??spec.gravePulse.interval)-dt;
+  if(p.graveTimer<=0){
+   const grave=s.graves.find(g=>Math.hypot((g.col-c)*BOARD.cw,(g.row-r)*BOARD.ch)<=spec.gravePulse.radius*BOARD.cw);
+   if(grave){
+    s.graves=s.graves.filter(g=>g!==grave);
+    particles(s,BOARD.x+(grave.col+.5)*BOARD.cw,BOARD.y+(grave.row+.5)*BOARD.ch,'#bfaa82',16);
+   }
+   p.graveTimer=spec.gravePulse.interval;
+  }
+ }
  if(spec.coinVacuum){
   for(let i=s.suns.length-1;i>=0;i--){const u=s.suns[i];s.sun+=u.amount;s.totalSuns+=u.amount;s.suns.splice(i,1);}
  }
@@ -362,6 +397,14 @@ function updatePlant(s,p,r,c,dt){
   const enemy=s.zombies.find(z=>!z.dead&&z.row===r&&Math.abs(z.x-x)<43);
   if(enemy){
    boom(s,x,y,spec.mine.damage,spec.mine.radius);
+   if(spec.mine.freeze){
+    for(const z of s.zombies){
+     if(z.hp>0&&Math.hypot(z.x-x,(z.row-r)*BOARD.ch)<spec.mine.radius*BOARD.cw){
+      z.frozen=Math.max(z.frozen||0,spec.mine.freeze);
+      z.slow=Math.max(z.slow,8);
+     }
+    }
+   }
    if(spec.sunOnExplode)addSun(s,x,y-40,spec.sunOnExplode);
    s.grid[r][c]=null;return;
   }
