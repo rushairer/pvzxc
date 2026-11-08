@@ -5,7 +5,7 @@ export const LEVELS=[
   {name:'草坪融合',intro:'将植物种到其他植物上，体验真正的双发与产光融合。',waves:4,length:145,initialSun:175,spawn:9,zombieMax:2},
   {name:'坚果前线',intro:'坚果抵御尸潮；结合豌豆射手可得到坚果射手。',waves:4,length:165,initialSun:200,spawn:8,zombieMax:3},
   {name:'樱桃风暴',intro:'樱桃炸弹会立即引爆。注意冷却时间与资源。',waves:5,length:175,initialSun:200,spawn:7.2,zombieMax:3},
-  {name:'融合试炼',intro:'利用全部六种基础植物和多级融合抵挡大波僵尸。',waves:5,length:185,initialSun:250,spawn:6.4,zombieMax:4}
+  {name:'融合试炼',intro:'利用新解锁的植物、元素能力和进阶融合抵挡大波僵尸。',waves:5,length:185,initialSun:250,spawn:6.4,zombieMax:4}
 ];
 export const ZOMBIE_TYPES={
   normal:{name:'普通僵尸',hp:270,speed:19,attack:100,period:1.0},
@@ -19,7 +19,7 @@ export function newGame(level=1,freeMode=false){
  const def=LEVELS[Math.max(0,Math.min(LEVELS.length-1,level-1))];
  return {level,def,freeMode,phase:'playing',paused:false,t:0,sun:freeMode?1000:def.initialSun,
   grid:Array.from({length:5},()=>Array(9).fill(null)), zombies:[],bullets:[],suns:[],effects:[],mowers:Array(5).fill(true),
-  decks:unlockedSeeds(level,freeMode),cooldowns:{},selected:null,shovel:false,hover:null,
+  decks:unlockedSeeds(level,freeMode),cooldowns:{},selected:null,shovel:false,hover:null,page:0,
   kills:0,spawnCount:0,spawnTimer:9,skyTimer:8,wave:1,flags:0,message:def.intro,messageLeft:6,
   shake:0,uid:0,winTimer:0,totalSuns:0,solved:new Set(),pendingGameOver:false};
 }
@@ -46,6 +46,9 @@ export function plantHere(s,row,col,id){
  if(s.sun<item.cost){message(s,'阳光不足');return false;}
  const fusion=cur?recipeFor(cur.id,id):null;
  if(cur&&!fusion){message(s,'这两种植物没有对应融合配方',3);return false;}
+ if(cur?.id==='puff'&&id==='puff'&&cur.stacks<3){
+  cur.stacks++;s.cooldowns[id]=item.cooldown;message(s,'小喷菇密植 '+cur.stacks+'/3');return true;
+ }
  const created=createPlant(fusion||item,cur?[...cur.parts,id]:[id]);
  if(fusion){
    // Fusion inherits the surviving existing plant's damage and planting age only where appropriate.
@@ -54,6 +57,8 @@ export function plantHere(s,row,col,id){
  }
  s.grid[row][col]=created;s.sun-=item.cost;s.cooldowns[id]=item.cooldown;
  const {x,y}=center(row,col);particles(s,x,y-26,fusion?'#ffe17a':'#d0ef84',fusion?22:8);
+ if((fusion||item).onPlantRowFire)for(let rr=Math.max(0,row-1);rr<=Math.min(4,row+1);rr++)rowFire(s,rr,300);
+ 
  return true;
 }
 export function collectAt(s,x,y){
@@ -70,6 +75,11 @@ export function spawn(s,row,type='normal',x=1418){
  s.zombies.push({id:s.uid++,row,x,y:BOARD.y+(row+.55)*BOARD.ch,type,hp:spec.hp,maxHp:spec.hp,speed:spec.speed,
   attack:spec.attack,period:spec.period,biting:0,slow:0,burn:0,dead:false,anim:rnd(0,6)});
 }
+function rowFire(s,row,damage){
+ for(const z of s.zombies)if(z.row===row&&z.hp>0)z.hp-=damage;
+ for(let i=0;i<30;i++)particles(s,BOARD.x+i*BOARD.w/30,BOARD.y+(row+.52)*BOARD.ch,'#ffad45',2);
+ s.shake=6;
+}
 function boom(s,x,y,damage,radius){
  for(const z of s.zombies)if(!z.dead&&Math.hypot(z.x-x,(z.y-y)*1.22)<radius*BOARD.cw){z.hp-=damage;}
  particles(s,x,y,'#fcb04e',28);s.shake=12;
@@ -78,14 +88,20 @@ function removePlant(s,r,c,p){
  const {x,y}=center(r,c),spec=getPlant(p.id);
  if(spec.sunOnDeath)addSun(s,x,y-23,spec.sunOnDeath);
  if(spec.onDeathExplosion)boom(s,x,y,spec.onDeathExplosion.damage,spec.onDeathExplosion.radius);
+ if(spec.deathRowFire)rowFire(s,r,600);
  particles(s,x,y,'#c4dc88',10);s.grid[r][c]=null;
 }
 function shoot(s,p,spec,row,col){
- const {x,y}=center(row,col);let count=spec.shots||1;
- for(let k=0;k<count;k++){
-  s.bullets.push({x:x+37-(count>2?k%2*8:0),y:y-25+(k-(count-1)/2)*14,row,
-   damage:spec.damage,life:4.5,speed:315,icon:spec.icon,through:!!spec.pierce,
-   hit:new Set(),splash:spec.splash,hitSun:spec.hitSunEvery?{owner:p,each:spec.hitSunEvery}:null});
+ const {x,y}=center(row,col),count=spec.shots||1;
+ const rows=spec.triple?[row-1,row,row+1].filter(r=>r>=0&&r<BOARD.rows):[row];
+ for(const targetRow of rows)for(let k=0;k<count;k++){
+  const origin=x+35-(count>2?k%2*8:0);
+  s.bullets.push({x:origin,originX:origin,y:y-24+(targetRow-row)*BOARD.ch+(k-(count-1)/2)*12,row:targetRow,
+   damage:spec.damage,life:4.6,speed:spec.lob?290:325,icon:spec.icon,
+   through:!!(spec.pierce||spec.spray),range:spec.range?spec.range*BOARD.cw:Infinity,
+   freezeHit:spec.freezeHit||0,burn:spec.burn||0,spore:!!spec.spore,
+   hit:new Set(),torchCells:new Set(),splash:spec.splash,lob:!!spec.lob,
+   hitSun:spec.hitSunEvery?{owner:p,each:spec.hitSunEvery}:null});
  }
  if(spec.backShot)s.bullets.push({x:x-26,y:y-20,row,damage:20,life:3.8,speed:-280,icon:'pea',hit:new Set()});
 }
@@ -101,6 +117,32 @@ function updatePlant(s,p,r,c,dt){
    for(let n=0;n<num;n++)addSun(s,x+(n-(num-1)/2)*24,y-45,25);
    p.sunTimer+=spec.sunInterval||25;
   }
+ }
+ if(spec.instant){
+   p.instantTimer-=dt;
+   if(p.instantTimer<=0){
+     if(spec.instant.kind==='ice')for(const z of s.zombies){z.hp-=spec.instant.damage;z.frozen=Math.max(z.frozen||0,spec.instant.freeze);z.slow=Math.max(z.slow,spec.instant.chill);}
+     if(spec.instant.kind==='row'){
+       const targets=s.zombies.filter(z=>z.row===r&&z.hp>0);
+       rowFire(s,r,spec.instant.damage);
+       if(spec.instant.sunOnHit)for(const z of targets)addSun(s,z.x,z.y-40,spec.instant.sunOnHit);
+     }
+     particles(s,x,y,'#b5eef7',24);s.grid[r][c]=null;return;
+   }
+ }
+ if(spec.squash){
+   const enemy=s.zombies.find(z=>z.hp>0&&z.row===r&&Math.abs(z.x-x)<spec.squash.range*BOARD.cw);
+   if(enemy){p.squashWindup+=dt;if(p.squashWindup>.55){boom(s,enemy.x,y,spec.squash.damage,spec.squash.radius);
+     if(spec.sunOnExplode)addSun(s,x,y-38,spec.sunOnExplode);
+     s.grid[r][c]=null;return;}}
+   else p.squashWindup=0;
+ }
+ if(spec.spike){
+   p.spikeTimer=(p.spikeTimer??0)-dt;
+   if(p.spikeTimer<=0){const hits=s.zombies.filter(z=>z.hp>0&&z.row===r&&Math.abs(z.x-x)<BOARD.cw*.52);
+   for(const z of hits){z.hp-=spec.spike.damage;particles(s,z.x,z.y-15,'#c6e36b',2);}
+   if(hits.length)p.spikeTimer=spec.spike.interval;
+   }
  }
  if(spec.explosion){
   p.fuseTimer-=dt;
@@ -135,7 +177,7 @@ function updatePlant(s,p,r,c,dt){
  if(spec.damage){
   p.fireTimer-=dt;
   if(p.fireTimer<=0){
-   const target=s.zombies.some(z=>!z.dead&&z.row===r&&(z.x>x+8||spec.backShot&&z.x<x));
+   const target=s.zombies.some(z=>!z.dead&&Math.abs(z.row-r)<=(spec.triple?1:0)&&(z.x>x+8||spec.backShot&&z.x<x)&&(!spec.range||z.x<x+spec.range*BOARD.cw));
    if(target){shoot(s,p,spec,r,c);p.fireTimer=(spec.interval||1.5)*(spec.accelerateNear?.7:1);}
    else p.fireTimer=0;
   }
@@ -144,10 +186,21 @@ function updatePlant(s,p,r,c,dt){
 function advanceProjectiles(s,dt){
  for(const b of s.bullets){
   b.x+=b.speed*dt;b.life-=dt;
+  if(b.range!==undefined&&Math.abs(b.x-b.originX)>b.range)b.life=-1;
+  if(b.life<=0)continue;
+  for(let c=0;c<BOARD.cols;c++){
+   const p=s.grid[b.row][c],spec=p&&getPlant(p.id),tx=BOARD.x+(c+.5)*BOARD.cw;
+   if(!spec?.torchBonus||b.torchCells.has(c)||b.speed<=0||b.icon.includes('ice'))continue;
+   if(b.x>=tx-7&&b.x<=tx+22){b.torchCells.add(c);b.damage+=spec.torchBonus;
+     b.splash??={damage:Math.round(b.damage*.25),radius:.6};b.icon='fire-pea';particles(s,b.x,b.y,'#ffb84f',6);}
+  }
   for(const z of s.zombies){
    if(z.dead||z.hp<=0||z.row!==b.row||b.hit.has(z.id))continue;
    if(Math.abs(z.x-b.x)>22||Math.abs(z.y-b.y)>58)continue;
-   b.hit.add(z.id);z.hp-=b.damage;particles(s,b.x,b.y,'#c3dc7b',4);
+   b.hit.add(z.id);z.hp-=b.damage;
+   if(b.freezeHit){z.slow=Math.max(z.slow,3.5);z.frost=(z.frost||0)+b.freezeHit;if(z.frost>=100){z.frozen=Math.max(z.frozen||0,2);z.frost=0;}}
+   if(b.burn)z.burn=Math.max(z.burn,b.burn);
+   particles(s,b.x,b.y,b.freezeHit?'#b5f2ff':b.burn?'#ffbb54':'#c3dc7b',4);
    if(b.splash)boom(s,z.x,z.y,b.splash.damage,b.splash.radius);
    if(b.hitSun){b.hitSun.owner.shotsHit++;if(b.hitSun.owner.shotsHit%b.hitSun.each===0)addSun(s,z.x,z.y-38,5);}
    if(!b.through){b.life=-1;break;}
@@ -158,11 +211,13 @@ function advanceProjectiles(s,dt){
 function advanceZombies(s,dt){
  for(const z of s.zombies){
   if(z.hp<=0)continue;
-  z.anim+=dt;z.slow=Math.max(0,z.slow-dt);
+  z.anim+=dt;z.slow=Math.max(0,z.slow-dt);z.frozen=Math.max(0,(z.frozen||0)-dt);
+  if(z.burn>0){z.hp-=7*dt;z.burn=Math.max(0,z.burn-dt);}
   const c=Math.floor((z.x-BOARD.x)/BOARD.cw);
   const plant=c>=0&&c<9?s.grid[z.row][c]:null;
   const px=BOARD.x+(c+.5)*BOARD.cw;
-  if(plant&&Math.abs(z.x-px)<49){
+  if(z.frozen>0)continue;
+  if(plant&&!getPlant(plant.id)?.low&&Math.abs(z.x-px)<49){
    z.biting-=dt;
    if(z.biting<=0){
     const was=plant.hp,now=plant.hp-z.attack;
