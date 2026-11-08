@@ -39,7 +39,7 @@ test('the real browser entrypoint supports endless start, save, load and catalog
   assert.equal(el('deckOverlay').classList.contains('is-visible'),true);
   assert.equal(el('deckSelected').children.length,10);
   assert.equal(el('deckConfirm').disabled,true);
-  assert.equal(el('deckLibrary').children.length,213);
+  assert.equal(el('deckLibrary').children.length,302);
   el('deckDefault').fire('click');
   assert.equal(el('deckConfirm').disabled,false);
   el('deckConfirm').fire('click');
