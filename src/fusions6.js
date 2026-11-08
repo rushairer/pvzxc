@@ -131,7 +131,7 @@ const TRAITS={
  'umbrella':{umbrella:true},
  'garlic':{garlic:true,poisonAura:4},
  'melon':{damage:88,interval:3,lob:true,splash:{damage:35,radius:1.1}},
- 'gravebuster':{graveBuster:true}
+ 'gravebuster':{gravePulse:{interval:11,radius:1}}
 };
 const BASE={
  wall:{hp:4400,damage:18,interval:2.8,defensive:true},
