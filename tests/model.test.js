@@ -57,9 +57,10 @@ test('planting and repeated plant fusion consume correct sun',()=>{
 });
 test('invalid recipes preserve sun and existing plant',()=>{
  const s=newGame(5);
- plantHere(s,0,0,'cherry'); // Cherry is intentionally instant, not suitable for fusion.
+ plantHere(s,0,0,'potato');
  const before=s.sun;
- assert.equal(plantHere(s,0,0,'chomper'),false);
+ s.cooldowns.potato=0;
+ assert.equal(plantHere(s,0,0,'potato'),false);
  assert.equal(s.sun,before);
 });
 test('projectiles can kill zombies and victory remains deterministic',()=>{
