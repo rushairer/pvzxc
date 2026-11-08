@@ -1,5 +1,6 @@
 import { EXTRA_SEEDS, EXTRA_RECIPES } from './expansion.js';
 import { THIRD_WAVE_SEEDS, THIRD_WAVE_RECIPES } from './expansion3.js';
+import { CLASSIC_SEEDS, WATERMELON_RECIPES, CLASSIC_FUSION_RECIPES } from './classic.js';
 // Base/day plants and additional seasonal plants are separated for maintainability.
 // Design references: docs/REFERENCE.md. Further exotic classes deliberately omitted.
 export const SEEDS = Object.freeze([
@@ -10,7 +11,8 @@ export const SEEDS = Object.freeze([
   {id:'potato',name:'土豆雷',icon:'potato',cost:25,cooldown:30,hp:300,mine:{arm:16,damage:1800,radius:.74},desc:'15–17秒武装，碰到僵尸后爆炸。'},
   {id:'chomper',name:'大嘴花',icon:'chomper',cost:150,cooldown:7.5,hp:300,chomp:{range:1.22,digest:30},desc:'吞噬前方僵尸，消化需约30秒。'},
   ...EXTRA_SEEDS,
-  ...THIRD_WAVE_SEEDS
+  ...THIRD_WAVE_SEEDS,
+  ...CLASSIC_SEEDS
 ]);
 
 function f(id,name,inputs,data,desc){
@@ -40,7 +42,9 @@ export const RECIPES = Object.freeze([
   f('split-pea','裂荚射手',['repeater','pea'],{icon:'pea',hp:300,damage:20,interval:1.5,shots:2,backShot:true},'向前双发，并能向后射击。'),
   f('gatling-pea','机枪射手',['repeater','repeater'],{icon:'pea',hp:300,damage:20,interval:1.5,shots:4},'每轮连发4颗豌豆。'),
   ...EXTRA_RECIPES,
-  ...THIRD_WAVE_RECIPES
+  ...THIRD_WAVE_RECIPES,
+  ...WATERMELON_RECIPES,
+  ...CLASSIC_FUSION_RECIPES
 ]);
 export function fusionKey(a,b){return [a,b].sort().join('+');}
 const recipes=new Map(RECIPES.filter(recipe=>!recipe.ordered).map(recipe=>[fusionKey(...recipe.inputs),recipe]));
@@ -61,8 +65,7 @@ export function createPlant(source,parts){
     fuseTimer:spec.explosion?.trigger==='fuse' ? 0.7 : Infinity,
     instantTimer:spec.instant?.delay??Infinity,stacks:1,squashWindup:0,
     cover:0,magnetTimer:2,coinTimer:spec.coinProduction?6:Infinity,miniTimer:2,
+    cannonTimer:spec.cannon?4:Infinity,gloomTimer:0,boostLeft:0,platform:spec.platform||null,
     armedAt:spec.mine?.arm||0,digestTimer:0,shotsHit:0,crackPhase:0};
 }
-export function unlockedSeeds(level,freeMode=false){
-  return freeMode?SEEDS:SEEDS.slice(0,Math.min(SEEDS.length,[0,6,10,16,23,29][Math.max(1,Math.min(5,level))]));
-}
+export function unlockedSeeds(){return SEEDS;}
