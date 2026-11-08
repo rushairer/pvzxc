@@ -73,16 +73,117 @@ function cherry(c,t){
  circle(c,-24,-51+t,6,'#ffac86');circle(c,10,-47+t,5,'#f97e75');
  circle(c,-19,-41+t,3,'#3b3029');circle(c,13,-38+t,3,'#3b3029');
 }
+function gradientOval(c,x,y,rx,ry,base,shine){
+ c.save();
+ const g=c.createRadialGradient(x-rx*.35,y-ry*.44,3,x,y,Math.max(rx,ry)*1.5);
+ g.addColorStop(0,shine);g.addColorStop(.62,base);g.addColorStop(1,'#243b21');
+ oval(c,x,y,rx,ry,g);c.restore();
+}
+function mushroom(c,icon,bob,age=20){
+ const puff=icon.includes('puff')||icon.includes('shroom')||icon==='sun-shroom';
+ const frozen=icon.includes('ice')||icon==='ice-shroom';
+ const base=frozen?'#addbec':puff?'#aa9cd5':'#aa7bd0';
+ const shade=frozen?'#65a7c9':puff?'#7668ae':'#755298';
+ line(c,[[0,1],[0,-31+bob]],'#d7d3ad',puff?13:18);
+ gradientOval(c,0,-43+bob,puff?28:39,puff?22:30,shade,base);
+ oval(c,-10,-51+bob,puff?11:17,puff?7:10,'#ffffff65');
+ oval(c,12,-44+bob,6,4,'#e9e1fc77');
+ eyes(c,-21+bob,puff?.7:.9);
+ if(icon.includes('ice'))for(let k=-1;k<=1;k++)line(c,[[k*16,-64+bob],[k*16+4,-82+bob]],'#d5fbff',4);
+ if(icon.includes('sun'))sunflower(c,20,-60+bob,true,true);
+ if(icon.includes('nut')||icon.includes('wall'))oval(c,-15,-26+bob,21,21,'#b78d57');
+}
+function pepper(c,bob){
+ line(c,[[3,-78+bob],[11,-90+bob],[22,-88+bob]],'#3b8135',7);
+ c.save();c.translate(0,-45+bob);c.rotate(-.17);
+ gradientOval(c,0,0,24,43,'#d23d28','#ffb052');
+ oval(c,-8,-15,5,12,'#ffc77b66');
+ eyes(c,-9);line(c,[[-8,8],[0,12],[8,7]],'#793a26',3);
+ c.restore();
+ for(let i=0;i<3;i++)oval(c,22+i*5,-66-i*11+bob,4,7,'#f8b54b');
+}
+function squash(c,bob){
+ gradientOval(c,0,-42+bob,37,39,'#75b349','#c7e17e');
+ gradientOval(c,-22,-68+bob,18,21,'#75b349','#b9d977');
+ oval(c,13,-72+bob,9,10,'#48843d');
+ line(c,[[0,-77+bob],[5,-94+bob]],'#447a32',7);
+ eyes(c,-49+bob);line(c,[[-12,-37+bob],[0,-35+bob],[12,-38+bob]],'#547e39',3);
+}
+function cabbage(c,bob,melon=false){
+ line(c,[[-12,0],[-6,-44+bob]],'#4a8235',10);
+ leaf(c,-14,-17,-2.4);
+ gradientOval(c,0,-56+bob,melon?37:31,melon?35:28,melon?'#4a982c':'#6ab747',melon?'#b9ed6e':'#d2f08b');
+ for(let i=-2;i<=2;i++){
+  const dx=i*11;
+  line(c,[[dx,-71+bob],[dx*1.2,-57+bob],[dx,-41+bob]],melon?'#43793266':'#5b983866',2.5);
+ }
+ eyes(c,-53+bob,.8);
+ if(melon){for(let i=-1;i<=1;i++)circle(c,i*12,-79+bob,3,'#f8e8a0');}
+}
+function spikes(c,glow=false){
+ for(let i=0;i<6;i++){
+  const x=-36+i*14;
+  c.beginPath();c.moveTo(x-8,-1);c.lineTo(x+1,-25-(i%2)*7);c.lineTo(x+10,-1);c.closePath();
+  c.fillStyle=glow?'#d0c75a':'#9aa16c';c.fill();
+  line(c,[[x+1,-20],[x+4,-8]],'#ffffff66',2);
+ }
+ if(glow)sunflower(c,0,-27,true,true);
+}
+function torch(c,bob,icy=false){
+ oval(c,0,-38+bob,27,45,'#a47147');
+ for(let i=-1;i<=1;i++)line(c,[[i*13,-65+bob],[i*10,-13+bob]],'#76462d',4);
+ eyes(c,-41+bob);
+ const g=c.createRadialGradient(0,-96+bob,2,0,-81+bob,45);
+ g.addColorStop(0,'#fff3a0');g.addColorStop(.4,icy?'#bcf6ff':'#ffca57');g.addColorStop(1,'#ed6d3200');
+ circle(c,0,-77+bob,44,g);
+ for(let k=0;k<4;k++){
+  const xx=(k-1.5)*12;
+  oval(c,xx,-84+bob-(k%2)*12,9,23,icy?'#a9e7ff':'#ef812e');
+ }
+ oval(c,0,-78+bob,13,20,'#ffe2a2');
+}
+function highlightPlant(c,icon,bob){
+ if(icon.includes('ice')){
+  circle(c,22,-88+bob,13,'#b0eeff66');
+  for(let i=0;i<4;i++){const a=i*TAU/4;line(c,[[22+Math.cos(a)*12,-88+bob+Math.sin(a)*12],[22+Math.cos(a)*20,-88+bob+Math.sin(a)*20]],'#daffff99',3);}
+ }
+ if(icon.includes('blaze')||icon.includes('fire')||icon.includes('torch')){
+  oval(c,22,-89+bob,8,14,'#ffb34a');
+  oval(c,23,-92+bob,4,8,'#ffe59c');
+ }
+}
+
 function paintPlant(c,p,x,y,scale=1,time=0){
  const icon=p.icon||'pea';
  c.save();c.translate(x,y);c.scale(scale,scale);
  const bob=Math.sin(time*2.4+x*.025)*2;
  oval(c,0,5,35,11,'#385c29bb');
+ const low=p.low||icon.includes('spike')||icon==='puff'||icon==='potato';
  const isNut=icon.includes('wall')||icon.includes('nut');
  const isSun=icon==='sun'||icon==='twin'||icon==='pea-sun'||icon==='sun-cherry'||icon==='sun-wall'||icon==='sun-potato'||icon==='sun-chomper';
  const isChomper=icon.includes('chomper');
  const isCherry=icon.includes('cherry')&&!isChomper;
- if(icon==='potato'||icon==='sun-potato'||icon==='cherry-potato'||icon==='pea-potato'||icon==='potato-chomper'){
+ if(icon.includes('spike')||icon==='spikeweed'){
+  spikes(c,icon.includes('solar'));
+ }else if(icon.includes('puff')||icon==='fume'||icon==='ice-shroom'||icon==='sun-shroom'||icon.includes('shroom')){
+  mushroom(c,icon,bob,p.age);
+ }else if(icon==='jalapeno'||icon==='solar-jalapeno'){
+  pepper(c,bob);if(icon==='solar-jalapeno')sunflower(c,-17,-91+bob,true,true);
+ }else if(icon.includes('squash')){
+  squash(c,bob);if(icon.includes('solar'))sunflower(c,24,-81+bob,true,true);
+ }else if(icon.includes('torch')){
+  torch(c,bob);
+ }else if(icon.includes('cabbage')||icon==='melon'){
+  cabbage(c,bob,icon==='melon');
+ }else if(icon==='threepeater'||icon.includes('three')){
+  line(c,[[0,3],[3,-48+bob]],'#3e852e',9);
+  leaf(c,-20,-18,-2.4);leaf(c,12,-20,-.7);
+  for(let k=-1;k<=1;k++){
+   c.save();c.translate(k*4,k*24);c.scale(.76,.76);
+   peaHead(c,icon.includes('ice')?'ice':icon.includes('charred')?'fire':'pea',bob);
+   c.restore();
+  }
+ }else if(icon==='potato'||icon==='sun-potato'||icon==='cherry-potato'||icon==='pea-potato'||icon==='potato-chomper'){
   potato(c,bob,p.age>15);
  }else if(isNut){
   nut(c,bob,icon==='giant-wall');
@@ -97,7 +198,7 @@ function paintPlant(c,p,x,y,scale=1,time=0){
   }else if(isCherry&&icon==='cherry'){
    cherry(c,bob);
   }else{
-   peaHead(c,icon==='cherry-pea'||icon==='super-cherry'?'fire':'pea',bob);
+   peaHead(c,icon.includes('ice')?'ice':icon.includes('blaze')||icon==='cherry-pea'||icon==='super-cherry'?'fire':'pea',bob);
   }
  }
  if(icon==='sun-cherry'){circle(c,24,-80+bob,18,'#df4142');sunflower(c,-9,-68+bob,true);}
@@ -115,6 +216,8 @@ function paintPlant(c,p,x,y,scale=1,time=0){
  else if(icon==='potato-wall'){circle(c,24,-74+bob,10,'#ab7a48');}
  else if(icon==='wall-chomper'){circle(c,18,-78+bob,12,'#865baa');}
  else if(icon==='potato-chomper'){circle(c,-13,-65+bob,15,'#8a5ca4');}
+ highlightPlant(c,icon,bob);
+ if(p.stacks>1)text(c,'×'+p.stacks,28,-16,22,'#fbf4b4','900','center');
  if(p.parts?.length>1){
   circle(c,30,-91,13,'#f5cf62');text(c,'✦',30,-91,18,'#75451f','900','center');
  }
