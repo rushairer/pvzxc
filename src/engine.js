@@ -119,11 +119,69 @@ function shoot(s,p,spec,row,col){
  }
  if(spec.backShot)s.bullets.push({x:x-26,y:y-20,row,damage:20,life:3.8,speed:-280,icon:'pea',hit:new Set()});
 }
-function zombieCanBeEaten(z){return !z.dead&&z.hp>0;}
+function fireStars(s,p,spec,row,col){
+ const {x,y}=center(row,col);
+ const directions=[[-1,0],[0,-1],[0,1],[.76,-.65],[.76,.65]];
+ if(spec.frontal)directions.push([1,0]);
+ for(const [dx,dy] of directions){
+  const speed=290;
+  s.bullets.push({x:x+dx*18,y:y-28+dy*15,originX:x,originY:y-28,
+   speed:speed*dx,vy:speed*dy,damage:spec.damage,life:5.8,icon:spec.icon,
+   star:true,freezeHit:spec.freezeHit||0,through:false,hit:new Set(),torchCells:new Set()});
+ }
+ particles(s,x,y-40,'#ffe589',4);
+}
+function createCrater(s,x,y,duration){
+ const col=Math.floor((x-BOARD.x)/BOARD.cw),row=Math.floor((y-BOARD.y)/BOARD.ch);
+ if(row<0||row>=BOARD.rows||col<0||col>=BOARD.cols)return;
+ s.craters=s.craters.filter(k=>k.row!==row||k.col!==col);
+ s.craters.push({row,col,life:duration});
+}
+function charmZombie(s,z){
+ z.charmed=true;z.airborne=false;z.type=z.type==='bucket'||z.type==='cone'?z.type:'normal';
+ z.frozen=0;z.slow=0;z.biting=0;
+ particles(s,z.x,z.y-85,'#f1a0ff',24);
+}
+function zombieCanBeEaten(z){return !z.dead&&z.hp>0&&!z.charmed;}
 function updatePlant(s,p,r,c,dt){
  const spec=getPlant(p.id),{x,y}=center(r,c);
  if(!spec)return;
  p.age+=dt;
+ if(spec.coinProduction){
+  p.coinTimer-=dt;
+  if(p.coinTimer<=0){
+   const rarity=Math.random(),value=rarity<.04?100:rarity<.25?25:5;
+   s.coins+=value;s.sun+=value===100?50:value===25?15:5;
+   particles(s,x,y-56,value===100?'#b5eaff':'#ffe578',12);
+   p.coinTimer+=spec.coinProduction.interval;
+  }
+ }
+ if(spec.magnet){
+  p.magnetTimer-=dt;
+  if(p.magnetTimer<=0){
+   const z=s.zombies.find(z=>!z.charmed&&z.hp>0&&z.armor>0&&
+     Math.hypot(z.x-x,(z.row-r)*BOARD.ch)<spec.magnet.range*BOARD.cw);
+   if(z){
+    z.hp-=z.armor;z.armor=0;z.type='normal';particles(s,z.x,z.y-129,'#c0e0f0',24);
+    message(s,'磁力菇吸走了金属防具！',1.5);
+    p.magnetTimer=spec.magnet.interval;
+   }else p.magnetTimer=1;
+  }
+ }
+ if(spec.proximityDoom){
+  if(s.zombies.some(z=>!z.charmed&&z.hp>0&&z.row===r&&Math.abs(z.x-x)<BOARD.cw)){
+   boom(s,x,y,spec.proximityDoom.damage,spec.proximityDoom.radius);
+   s.grid[r][c]=null;return;
+  }
+ }
+ if(spec.miniSquash){
+  p.miniTimer-=dt;
+  if(p.miniTimer<=0){
+   const z=s.zombies.find(z=>!z.charmed&&z.hp>0&&z.row===r&&Math.abs(z.x-x)<spec.miniSquash.range*BOARD.cw);
+   if(z){z.hp-=spec.miniSquash.damage;particles(s,z.x,z.y-30,'#b5ec7b',14);p.miniTimer=spec.miniSquash.interval;}
+   else p.miniTimer=.3;
+  }
+ }
  if(spec.sun){
   p.sunTimer-=dt;
   if(p.sunTimer<=0){
@@ -140,6 +198,18 @@ function updatePlant(s,p,r,c,dt){
        const targets=s.zombies.filter(z=>z.row===r&&z.hp>0);
        rowFire(s,r,spec.instant.damage);
        if(spec.instant.sunOnHit)for(const z of targets)addSun(s,z.x,z.y-40,spec.instant.sunOnHit);
+     }
+     if(spec.instant.kind==='doom'||spec.instant.kind==='ice-doom'){
+       boom(s,x,y,spec.instant.damage,spec.instant.radius||3.7);
+       if(spec.instant.kind==='ice-doom')for(const z of s.zombies){
+        z.frozen=Math.max(z.frozen||0,spec.instant.freeze||4);z.slow=Math.max(z.slow,8);
+       }
+       if(spec.instant.crater)createCrater(s,x,y,spec.instant.crater);
+       s.screenFlash=1;s.shake=20;
+     }
+     if(spec.instant.kind==='wind'){
+       for(const z of s.zombies)if(z.airborne){z.hp=0;particles(s,z.x,z.y-108,'#baf1f6',22);}
+       s.windLeft=2.5;particles(s,x,y-40,'#aee9e7',26);
      }
      particles(s,x,y,'#b5eef7',24);s.grid[r][c]=null;return;
    }
@@ -191,9 +261,19 @@ function updatePlant(s,p,r,c,dt){
  if(spec.damage){
   p.fireTimer-=dt;
   if(p.fireTimer<=0){
-   const target=s.zombies.some(z=>!z.dead&&Math.abs(z.row-r)<=(spec.triple?1:0)&&(z.x>x+8||spec.backShot&&z.x<x)&&(!spec.range||z.x<x+spec.range*BOARD.cw));
-   if(target){shoot(s,p,spec,r,c);p.fireTimer=(spec.interval||1.5)*(spec.accelerateNear?.7:1);}
-   else p.fireTimer=0;
+   const afraid=spec.scaredy&&s.zombies.some(z=>!z.charmed&&z.hp>0&&
+     Math.abs(z.row-r)<=1&&Math.abs(z.x-x)<BOARD.cw*1.5);
+   const target=spec.star
+    ? s.zombies.some(z=>z.hp>0&&!z.charmed)
+    : s.zombies.some(z=>!z.dead&&!z.charmed&&
+      (spec.triple?Math.abs(z.row-r)<=1:z.row===r)&&
+      (z.x>x+8||spec.backShot&&z.x<x)&&
+      (!spec.range||z.x<x+spec.range*BOARD.cw)&&(!z.airborne||spec.antiAir));
+   if(!afraid&&target){
+    if(spec.star)fireStars(s,p,spec,r,c);
+    else shoot(s,p,spec,r,c);
+    p.fireTimer=(spec.interval||1.5)*(spec.accelerateNear?.7:1);
+   }else p.fireTimer=0;
   }
  }
 }
