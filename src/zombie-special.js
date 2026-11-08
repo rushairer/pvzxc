@@ -18,11 +18,18 @@ export function applySpecialZombie(s,z,dt,{BOARD,spawn,getPlant,particles}){
  const spec=CLASSIC_ZOMBIES[z.type];
  if(!spec||z.charmed||z.hp<=0)return false;
  z.specialTimer=(z.specialTimer??3)-dt;
+ z.jumpAnimation=Math.max(0,(z.jumpAnimation||0)-dt);
+ if(spec.yeti&&z.specialTimer<=0){
+  z.fleeing=true;z.speed=-Math.abs(z.baseSpeed||z.speed)*1.25;
+ }
+ if(spec.submerged){
+  z.submerged=z.x>BOARD.x+90&&!z.frozen;
+ }
  const col=Math.floor((z.x-BOARD.x)/BOARD.cw);
  const nearby=col>=0&&col<9?s.grid[z.row][col]:null;
  const center=BOARD.x+(col+.5)*BOARD.cw;
  // Pole-vaulters and pogo jumpers bypass their first obstacle.
- if((spec.jump||spec.pogo)&&nearby&&Math.abs(z.x-center)<68&&(!z.jumped||spec.pogo)){
+ if((spec.jump||spec.pogo)&&nearby&&Math.abs(z.x-center)<68&&z.jumpAnimation<=0&&(!z.jumped||spec.pogo)){
   if(spec.pogo){
    if(getPlant(nearby.id)?.tall||nearby.id==='tallnut'){z.jumped=true;}
    else{z.x-=BOARD.cw*.86;z.jumpAnimation=.65;return true;}
@@ -99,7 +106,7 @@ export function applySpecialZombie(s,z,dt,{BOARD,spawn,getPlant,particles}){
 }
 export function pickEndlessEnemy(wave){
  const pool=['normal','normal','normal','flag','cone','newspaper'];
- if(wave>=2)pool.push('pole','screen','duck y'.replace(' ',''),'backup','dancer');
+ if(wave>=2)pool.push('pole','screen','ducky','backup','dancer');
  if(wave>=3)pool.push('bucket','balloon','pogo','football','snorkel','jack','dolphin');
  if(wave>=4)pool.push('digger','ladder','catapult','zomboni','bobsled','bungee');
  if(wave>=5)pool.push('garg','imp','yeti');
