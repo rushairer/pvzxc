@@ -1,6 +1,7 @@
 import {SEEDS,RECIPES,getPlant,recipeFor,createPlant,unlockedSeeds} from './model.js';
 export const BOARD={x:184,y:188,w:1053,h:540,rows:5,cols:9,cw:117,ch:108};
 import {CLASSIC_ZOMBIES} from './classic.js';
+import {applySpecialZombie,pickEndlessEnemy} from './zombie-special.js';
 export const ENDLESS={name:'融合无尽',initialSun:500,waveDuration:34,initialSpawn:9,minimumSpawn:1.25};
 export const ZOMBIE_TYPES=CLASSIC_ZOMBIES;
 export const ZOMBIE_IDS=Object.freeze(Object.keys(CLASSIC_ZOMBIES));
@@ -304,6 +305,7 @@ function advanceProjectiles(s,dt){
 function advanceZombies(s,dt){
  for(const z of s.zombies){
   if(z.hp<=0)continue;
+  if(applySpecialZombie(s,z,dt,{BOARD,spawn,getPlant,particles}))continue;
   z.anim+=dt;z.slow=Math.max(0,z.slow-dt);z.frozen=Math.max(0,(z.frozen||0)-dt);
   z.butter=Math.max(0,(z.butter||0)-dt);
   if(z.burn>0){z.hp-=7*dt;z.burn=Math.max(0,z.burn-dt);}
@@ -346,11 +348,11 @@ function advanceZombies(s,dt){
     }
    }
   }else{z.biting=0;z.x-=z.speed*(z.slow>0?.5:1)*dt;}
-  if(z.x<BOARD.x-30&&s.mowers[z.row]){
+  if(z.x<BOARD.x-30&&s.mowers[z.row]&&!z.charmed){
    s.mowers[z.row]=false;s.shake=16;
    for(const other of s.zombies)if(other.row===z.row)other.hp=0;
    message(s,'第 '+(z.row+1)+' 行割草机启动！',3);
-  }else if(z.x<BOARD.x-96&&!s.mowers[z.row]){
+  }else if(z.x<BOARD.x-96&&!s.mowers[z.row]&&!z.charmed){
    s.phase='lost';message(s,'僵尸吃掉了你的脑子！');
   }
  }
@@ -362,14 +364,21 @@ function advanceZombies(s,dt){
  s.zombies=alive;
 }
 function spawnWave(s){
- if(s.t>s.def.length)return;
- const stage=Math.floor(s.t/(s.def.length/s.def.waves));
- const row=Math.floor(rnd(0,5)),roll=Math.random();
- const type=stage>=3&&roll<.13?'bucket':stage>=2&&roll<.22?'balloon':stage>=2&&roll<.31?'newspaper':stage>=1&&roll<.54?'cone':stage>=2&&roll<.60?'runner':'normal';
+ const wave=s.wave;
+ const count=Math.min(3,1+Math.floor(wave/4));
+ const type=wave%10===0&&s.spawnCount>0&&s.spawnCount%12===0?'zomboss':pickEndlessEnemy(wave);
+ const row=Math.floor(rnd(0,5));
  spawn(s,row,type);
- if(stage>=2&&Math.random()<.27)spawn(s,Math.floor(rnd(0,5)),'normal',1470);
+ if(wave>=6&&Math.random()<Math.min(.48,wave*.025)){
+  spawn(s,Math.floor(rnd(0,5)),pickEndlessEnemy(wave),1480);
+ }
+ if(wave>=10&&Math.random()<.14)spawn(s,row,'imp',1500);
  s.spawnCount++;
- s.spawnTimer=Math.max(2.8,s.def.spawn-stage*.55)+rnd(-1,1.5);
+ const speedup=ENDLESS.initialSpawn*Math.pow(.97,Math.min(wave,90));
+ s.spawnTimer=Math.max(ENDLESS.minimumSpawn,speedup)+rnd(-.2,1.1);
+ if(wave%10===0&&s.spawnCount%12===0){
+  spawn(s,row,'zomboss',1540);s.spawnTimer+=2;
+ }
 }
 export function tick(s,dt){
  if(!s||s.phase!=='playing'||s.paused)return;
@@ -382,8 +391,16 @@ export function tick(s,dt){
  for(const p of s.decks)s.cooldowns[p.id]=Math.max(0,(s.cooldowns[p.id]||0)-dt);
  s.skyTimer-=dt;
  if(s.skyTimer<=0){addSun(s,rnd(BOARD.x+45,BOARD.x+BOARD.w-45),rnd(BOARD.y+70,BOARD.y+BOARD.h-30),25,true);s.skyTimer=rnd(7,11);}
- const newWave=Math.min(s.def.waves,1+Math.floor(s.t/(s.def.length/s.def.waves)));
- if(newWave>s.wave){s.wave=newWave;s.flags++;message(s,'一大波僵尸正在接近！',3.3);s.shake=5;}
+ s.waveClock+=dt;
+ const nextWave=1+Math.floor(s.t/ENDLESS.waveDuration);
+ if(nextWave>s.wave){
+  s.wave=nextWave;s.flags++;s.record=Math.max(s.record,s.wave);
+  message(s,s.wave%10===0?'首领来袭！ 第 '+s.wave+' 波':'无尽尸潮 · 第 '+s.wave+' 波',3.5);
+  s.shake=6;
+  for(let r=0;r<5;r++)spawn(s,r,s.wave%10===0?'football':'flag',1470+r*26);
+ }
+ if(s.iceTrails){for(const trail of s.iceTrails)trail.life-=dt;s.iceTrails=s.iceTrails.filter(x=>x.life>0);}
+
  s.spawnTimer-=dt;if(s.spawnTimer<=0)spawnWave(s);
  for(let r=0;r<5;r++)for(let c=0;c<9;c++){const p=s.grid[r][c];if(p)updatePlant(s,p,r,c,dt);}
  advanceProjectiles(s,dt);advanceZombies(s,dt);
@@ -391,5 +408,5 @@ export function tick(s,dt){
  s.suns=s.suns.filter(u=>u.life>0);
  for(const p of s.effects){p.x+=p.vx*dt;p.y+=p.vy*dt;p.vy+=190*dt;p.life-=dt;}
  s.effects=s.effects.filter(p=>p.life>0);
- if(s.t>=s.def.length&&!s.zombies.some(z=>!z.charmed)){s.winTimer+=dt;if(s.winTimer>.8)s.phase='won';}
+ if(s.phase==='lost')s.failed=true;
 }
