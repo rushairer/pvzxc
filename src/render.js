@@ -491,4 +491,16 @@ export function drawScene(c,s,options){
  }
  c.restore();
  hud(c,s,options);status(c,s);
+ if(s?.hover&&s.hover.y>=20&&s.hover.y<=147&&s.hover.x>=219&&s.hover.x<1003){
+  const index=Math.floor((s.hover.x-219)/112)+(s.page||0)*7;
+  const seed=s.decks[index];
+  if(seed){
+   const x=Math.max(230,Math.min(1020,219+(index%7)*112));
+   box(c,x,166,366,75,12,'#243b2cf0','#dac77b',2);
+   text(c,seed.name,x+15,185,17,'#ffe6a5','900');
+   text(c,'☀ '+seed.cost+'    冷却 '+seed.cooldown+'秒',x+345,186,13,'#f1e1bc','750','right');
+   const desc=seed.desc||'点击草坪即可种植';
+   text(c,desc.length>24?desc.slice(0,23)+'…':desc,x+15,220,13,'#e5f1d3','650');
+  }
+ }
 }
