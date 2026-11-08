@@ -56,6 +56,7 @@ function showResult(){
 }
 function openGuide(){
  guide.classList.add('is-visible');guide.setAttribute('aria-hidden','false');
+ document.getElementById('recipeSearch').focus({preventScroll:true});
 }
 function closeGuide(){
  guide.classList.remove('is-visible');guide.setAttribute('aria-hidden','true');
@@ -76,8 +77,20 @@ for(const recipe of RECIPES){
  const label=document.createElement('strong');
  label.textContent=recipe.inputs.map(id=>getPlant(id)?.name||id).join(' + ')+' → '+recipe.name;
  const detail=document.createElement('small');detail.textContent=recipe.desc;
+ card.dataset.search=[recipe.name,recipe.desc,...recipe.inputs.map(id=>getPlant(id)?.name||id)].join(' ').toLocaleLowerCase('zh-CN');
  card.append(label,detail);recipeGrid.append(card);
 }
+const recipeSearch=document.getElementById('recipeSearch');
+const recipeCount=document.getElementById('recipeCount');
+recipeSearch.addEventListener('input',()=>{
+ const term=recipeSearch.value.trim().toLocaleLowerCase('zh-CN');
+ let shown=0;
+ for(const card of recipeGrid.children){
+  const matched=card.dataset.search.includes(term);
+  card.hidden=!matched;if(matched)shown++;
+ }
+ recipeCount.textContent=shown+' / '+RECIPES.length+' 条';
+});
 function point(ev){
  const r=canvas.getBoundingClientRect();
  return{x:(ev.clientX-r.left)*LOGICAL_WIDTH/r.width,y:(ev.clientY-r.top)*LOGICAL_HEIGHT/r.height};
