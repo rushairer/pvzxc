@@ -32,8 +32,8 @@ test('all 26 classic zombie categories are registered',()=>{
   assert.ok(s.zombies[0].hp>0);
  }
 });
-test('164 distinct fusion recipes have resolvable ingredients and products',()=>{
- assert.equal(RECIPES.length,164);
+test('253 distinct fusion recipes have resolvable ingredients and products',()=>{
+ assert.equal(RECIPES.length,253);
  const ids=new Set(SEEDS.map(s=>s.id)),recipeIds=RECIPES.map(r=>r.id);
  assert.equal(new Set(recipeIds).size,recipeIds.length);
  assert.equal(recipeIds.filter(x=>ids.has(x)).length,0);
@@ -159,7 +159,7 @@ test('corrupt or incompatible snapshots reject cleanly',()=>{
  assert.throws(()=>loadGame('slot1',storage),/读取失败/);
  assert.throws(()=>restoreSnapshot({version:SAVE_VERSION+1,state:{}}),/不受支持/);
 });
-test('render all 49 base plants and 164 fusion species without exceptions',()=>{
+test('render all 49 base plants and 253 fusion species without exceptions',()=>{
  const all=[...SEEDS,...RECIPES],ctx=mockCtx();
  for(let i=0;i<all.length;i+=45){
   const s=newGame();for(let n=0;n<45&&i+n<all.length;n++){
@@ -174,7 +174,7 @@ test('render all 26 enemy visual classes without exceptions',()=>{
  assert.doesNotThrow(()=>drawScene(ctx,s,renderOptions));
 });
 
-test('all 164 recipes can be selected into a new ten-card deck',()=>{
+test('all 253 recipes can be selected into a new ten-card deck',()=>{
  for(const recipe of RECIPES){
   const s=generous(recipe.id);s.selected=recipe.id;
   assert.equal(plantHere(s,2,2,recipe.id),true,recipe.id);
@@ -276,4 +276,34 @@ test('glove mode and cooldown are preserved through save and load',()=>{
  assert.equal(resumed.gloveCooldown.plant,10);
  assert.equal(resumed.gloveCooldown.zombie,12);
  assert.equal(resumed.tool,'glove');
+});
+
+test('new fusion family has 89 unique resolvable recipe pairs',async()=>{
+ const {FUSIONS_V6}=await import('../src/fusions6.js');
+ assert.equal(FUSIONS_V6.length,89);
+ const keys=FUSIONS_V6.map(recipe=>fusionKey(...recipe.inputs));
+ assert.equal(new Set(keys).size,89);
+ for(const recipe of FUSIONS_V6){
+  assert.equal(recipeFor(recipe.inputs[0],recipe.inputs[1])?.id,recipe.id);
+  assert.ok(getPlant(recipe.id));
+  assert.ok(recipe.hp>0);
+  assert.equal(recipe.approximate,true);
+ }
+});
+test('every new fusion is playable from the ten-card pre-game selection',async()=>{
+ const {FUSIONS_V6}=await import('../src/fusions6.js');
+ for(const recipe of FUSIONS_V6){
+  const game=generous(recipe.id);
+  assert.equal(plantHere(game,2,2,recipe.id),true,recipe.id);
+  assert.equal(game.grid[2][2].id,recipe.id);
+  game.spawnTimer=1e7;game.skyTimer=1e7;
+  assert.doesNotThrow(()=>step(game,.1),recipe.id);
+ }
+});
+test('rendering starfruit bullets and all new fusion images does not throw',()=>{
+ const s=generous('starfruit');plantHere(s,2,2,'starfruit');
+ spawn(s,1,'normal',950);s.spawnTimer=1e7;s.skyTimer=1e7;
+ step(s,.7);
+ assert.ok(s.bullets.some(b=>b.star));
+ assert.doesNotThrow(()=>drawScene(mockCtx(),s,renderOptions));
 });
