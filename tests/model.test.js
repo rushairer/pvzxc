@@ -190,3 +190,17 @@ test('sun-shooter bullets reconnect to their exact plant after saving',()=>{
  assert.ok(match);
  assert.equal(match.hitSun.owner,restored.grid[2][1]);
 });
+
+test('advanced recipe crafting cooldown recovers and remains intact through save/load',()=>{
+ const s=generous();
+ s.quickRecipe='repeater';s.selected='repeater';
+ assert.ok(plantHere(s,2,2,'repeater'));
+ assert.equal(plantHere(s,2,3,'repeater'),false);
+ step(s,3);
+ const snapshot=restoreSnapshot(makeSnapshot(s));
+ assert.ok(snapshot.cooldowns.repeater>0);
+ step(snapshot,12);
+ assert.equal(snapshot.cooldowns.repeater,0);
+ assert.ok(plantHere(snapshot,2,3,'repeater'));
+ assert.equal(snapshot.grid[2][3].id,'repeater');
+});
