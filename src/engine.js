@@ -39,6 +39,8 @@ export function plantHere(s,row,col,id){
  const imitation=id==='imitater'?getPlant(s.lastPlanted):null;
  if(id==='imitater'&&(!imitation||imitation.id==='imitater')){message(s,'先成功种植一种植物，再使用模仿者');return false;}
  const item=imitation||selected,price=item.cost;
+ const blockedByGrave=s.graves?.some(g=>g.row===row&&g.col===col);
+ if(blockedByGrave&&!selected.graveBuster){message(s,'墓碑占据草坪，先用墓碑吞噬者清理！');return false;}
  if(s.sun<price){message(s,'阳光不足');return false;}
  if(selected.coffee){
   if(!cur){message(s,'咖啡豆需要种在植物上');return false;}
@@ -348,6 +350,7 @@ function advanceProjectiles(s,dt){
   }
   for(const z of s.zombies){
    if(z.dead||z.hp<=0||z.charmed||(!b.star&&!b.homing&&z.row!==b.row)||b.hit.has(z.id))continue;
+   if(z.submerged&&!b.lob&&!b.homing&&!b.star)continue;
    if(z.airborne&&!b.antiAir&&!b.star&&!b.homing)continue;
    const hit=b.star||b.homing?Math.hypot(z.x-b.x,(z.y-38)-b.y)<35
     :Math.abs(z.x-b.x)<22&&Math.abs(z.y-b.y)<58;
@@ -371,6 +374,7 @@ function advanceZombies(s,dt){
  for(const z of s.zombies){
   if(z.hp<=0)continue;
   if(applySpecialZombie(s,z,dt,{BOARD,spawn,getPlant,particles}))continue;
+  if(z.fleeing&&z.x>1520){z.hp=0;continue;}
   z.anim+=dt;z.slow=Math.max(0,z.slow-dt);z.frozen=Math.max(0,(z.frozen||0)-dt);
   z.butter=Math.max(0,(z.butter||0)-dt);
   if(z.burn>0){z.hp-=7*dt;z.burn=Math.max(0,z.burn-dt);}
@@ -463,6 +467,12 @@ export function tick(s,dt){
   message(s,s.wave%10===0?'首领来袭！ 第 '+s.wave+' 波':'无尽尸潮 · 第 '+s.wave+' 波',3.5);
   s.shake=6;
   for(let r=0;r<5;r++)spawn(s,r,s.wave%10===0?'football':'flag',1470+r*26);
+  if(s.wave%4===0&&s.graves.length<6){
+   const empties=[];
+   for(let r=0;r<5;r++)for(let c=5;c<9;c++)
+    if(!s.grid[r][c]&&!s.graves.some(g=>g.row===r&&g.col===c))empties.push({row:r,col:c});
+   if(empties.length)s.graves.push(empties[Math.floor(Math.random()*empties.length)]);
+  }
  }
  if(s.iceTrails){for(const trail of s.iceTrails)trail.life-=dt;s.iceTrails=s.iceTrails.filter(x=>x.life>0);}
 
