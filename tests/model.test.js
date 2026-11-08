@@ -191,5 +191,5 @@ test('free play supports 3 pages and every seed stays selectable',()=>{
  const s=newGame(5,true);
  assert.equal(s.decks.length,16);
  assert.equal(Math.ceil(s.decks.length/7),3);
- for(const item of s.decks){s.sun=999;s.cooldowns[item.id]=0;assert.ok(plantHere(s,0,s.decks.indexOf(item)%9,item.id));}
+ for(const item of s.decks){const fresh=newGame(5,true);fresh.sun=999;assert.ok(plantHere(fresh,0,0,item.id),item.id);}
 });
