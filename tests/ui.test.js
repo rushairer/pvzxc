@@ -34,7 +34,7 @@ test('the real browser entrypoint supports endless start, save, load and catalog
   const el=id=>elements.get(id);
   assert.equal(el('primaryAction').textContent,'▶ 新建无尽战场');
   assert.equal(el('freeAction').disabled,true);
-  assert.equal(el('recipeGrid').children.length,164);
+  assert.equal(el('recipeGrid').children.length,253);
   el('primaryAction').fire('click');
   assert.equal(el('deckOverlay').classList.contains('is-visible'),true);
   assert.equal(el('deckSelected').children.length,10);
