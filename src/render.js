@@ -246,6 +246,17 @@ function paintZombie(c,z,t){
   line(c,[[-21,-161],[21,-161]],'#5d7378',3);
  }
  if(z.type==='runner'){box(c,-27,-150,56,10,4,'#d34d3e');}
+ if(z.frozen>0){
+  oval(c,0,-117,38,48,'#8deaff60');
+  for(let k=0;k<5;k++){
+   const a=k*TAU/5+Math.sin(t)*.18,x=Math.cos(a)*38,y=-116+Math.sin(a)*47;
+   line(c,[[x,y-8],[x,y+8]],'#defbff',3);
+   line(c,[[x-6,y],[x+6,y]],'#defbff',2);
+  }
+ }
+ if(z.burn>0){
+  for(let k=0;k<4;k++)oval(c,(k-1.5)*17,-95-k%2*19,7,17,k%2?'#ffc64a99':'#f3823688');
+ }
  if(z.hp<z.maxHp){box(c,-29,-212,58,7,3,'#3a2b2a');box(c,-28,-211,56*Math.max(0,z.hp/z.maxHp),5,2,'#9bce5b');}
  c.restore();
 }
@@ -407,11 +418,15 @@ export function drawScene(c,s,options){
   }
   for(const z of [...s.zombies].sort((a,b)=>a.row-b.row))paintZombie(c,z,s.t);
   for(const p of s.bullets){
-   let col=p.icon.includes('cherry')?'#f39b54':p.icon.includes('sun')?'#f7d75a':p.icon.includes('nut')?'#b79d62':'#8bbf4c';
+   let col=p.icon.includes('ice')?'#a4eeff':p.icon.includes('blaze')||p.icon.includes('fire')?'#ff9d4e':p.icon.includes('cherry')?'#f39b54':p.icon.includes('sun')?'#f7d75a':p.icon.includes('nut')?'#b79d62':p.icon.includes('puff')||p.icon.includes('fume')?'#bb9dea':'#8bbf4c';
    circle(c,p.x,p.y,12,col+'55');circle(c,p.x,p.y,8,col);circle(c,p.x-2,p.y-2,2,'#fff9dc');
   }
   for(const u of s.suns)paintSun(c,u);
-  for(const p of s.effects){c.globalAlpha=Math.min(1,p.life/.32);circle(c,p.x,p.y,p.size,p.color);}
+  for(const p of s.effects){
+   c.globalAlpha=Math.min(1,p.life/.32);
+   circle(c,p.x,p.y,p.size*2,p.color+'33');
+   circle(c,p.x,p.y,p.size,p.color);
+  }
   c.globalAlpha=1;
  }
  c.restore();
