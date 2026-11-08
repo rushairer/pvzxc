@@ -1,3 +1,4 @@
+import {DECK_LAYOUT,seedAtPoint} from './deck.js';
 import {drawThirdWavePlant,drawPumpkinCover} from './art3.js';
 import {drawClassicPlant} from './classic-art.js';
 import {paintFusionArt} from './fusion-art.js';
@@ -347,50 +348,64 @@ function mower(c,x,y){
  c.restore();
 }
 function card(c,item,index,x,y,s){
- const cooldown=s?.cooldowns[item.id]||0;
- c.save();c.shadowColor='#0c1c1177';c.shadowBlur=9;c.shadowOffsetY=4;
+ const W=DECK_LAYOUT.width,H=DECK_LAYOUT.height,cd=s?.cooldowns[item.id]||0;
  const selected=s?.selected===item.id;
- box(c,x,y,102,111,10,selected?'#f4ce72':'#42663b',selected?'#fff4ad':'#86a36e',selected?4:2);
- box(c,x+5,y+5,92,74,6,'#bddb9b');
- const model={...item,parts:[item.id],age:22};paintPlant(c,model,x+49,y+81,.48,s?.t||0);
- box(c,x+5,y+81,92,24,4,'#30452edf');
- text(c,item.name,x+51,y+93,12.6,'#f4efd4','850','center');
- box(c,x+66,y+6,31,23,5,'#f4d17e');
- text(c,String(item.cost),x+81,y+17,13,'#4c381d','900','center');
- text(c,String(index+1),x+15,y+15,13,'#f8ffe8','900','center');
- if(!s?.decks.some(p=>p.id===item.id)){
-  box(c,x+4,y+4,94,103,8,'#131f17ba');text(c,'未解锁',x+51,y+55,15,'#e0ddbf','800','center');
- }else if(cooldown>0){
-  box(c,x+4,y+4,94,103,8,'#102014a8');text(c,cooldown.toFixed(1)+'s',x+51,y+56,21,'#ffefce','900','center');
+ c.save();c.shadowColor='#10231577';c.shadowBlur=5;c.shadowOffsetY=2;
+ box(c,x,y,W,H,8,selected?'#f0cf7b':'#4b713e',selected?'#fff3a8':'#9aba82',selected?3:1.5);
+ box(c,x+4,y+4,45,H-8,6,'#aecf8f');
+ const model={...item,parts:item.inputs||[item.id],age:22};
+ paintPlant(c,model,x+28,y+48,.34,s?.t||0);
+ text(c,item.name.length>7?item.name.slice(0,7):item.name,x+54,y+16,11,'#fdf1c6','850');
+ text(c,'☀'+(item.cost??optionsCost(item)),x+54,y+36,11,'#ffe2a0','800');
+ text(c,String(index+1),x+12,y+11,10,'#294021','900','center');
+ if(cd>0){
+  box(c,x+1,y+1,W-2,H-2,7,'#102217cc');
+  text(c,cd.toFixed(1)+'秒',x+W/2,y+H/2,17,'#fff3d2','900','center');
  }
  c.restore();
 }
+function optionsCost(item){return typeof item.cost==='number'?item.cost:'融合';}
+function gloveSymbol(c,x,y,active=false){
+ c.save();c.translate(x,y);
+ const palm=active?'#f4d88a':'#e4d2a8';
+ for(let i=0;i<4;i++){
+  box(c,-18+i*10,-26-(i%2)*5,9,30,4,palm,'#997c5a',1.2);
+ }
+ c.save();c.rotate(-.55);
+ box(c,-33,-8,15,29,7,palm,'#997c5a',1.2);c.restore();
+ box(c,-22,-10,42,34,10,palm,'#977a57',1.5);
+ box(c,-20,17,38,14,3,active?'#58a9a0':'#6cba7e','#315f49',1);
+ c.restore();
+}
 function hud(c,s,options){
- const grad=c.createLinearGradient(0,0,0,161);grad.addColorStop(0,'#2b4128');grad.addColorStop(.5,'#3d5831');grad.addColorStop(1,'#1a321f');
- c.save();c.shadowColor='#091b13';c.shadowBlur=22;c.shadowOffsetY=8;
- box(c,10,9,1420,147,17,grad,'#a6a26e',3);c.restore();
- box(c,17,17,1405,132,13,'#00000000','#e7ce8b35',1);
- box(c,26,23,175,115,13,'#344f34','#9bc16a',2);
- const glow=c.createRadialGradient(73,67,2,73,67,51);
- glow.addColorStop(0,'#fff3b7bb');glow.addColorStop(1,'#ffdf6b00');circle(c,73,67,51,glow);
- circle(c,73,69,29,'#f7ce5c');text(c,'☀',73,68,34,'#fff4aa','900','center');
- text(c,String(s?.sun??150),135,68,31,'#f9dc80','900','center');
- text(c,'阳光',112,111,15,'#dce9c8','800','center');
- const page=s?.page??0,decks=s?.decks??options.SEEDS.slice(0,6);
- for(let i=0;i<7;i++){const seed=decks[page*7+i];
-  if(seed)card(c,seed,i,219+i*112,23,s);
-  else box(c,219+i*112,23,102,111,9,'#26392a','#627750',2);}
- const pages=Math.max(1,Math.ceil(decks.length/7));
- box(c,1003,39,114,84,10,'#516a44','#b2b780',2);
- text(c,'‹',1031,74,33,page>0?'#fff6c8':'#93a08b','900','center');
- text(c,'›',1087,74,33,page+1<pages?'#fff6c8':'#93a08b','900','center');
- text(c,(page+1)+' / '+pages,1060,106,15,'#f2e4bb','900','center');
- line(c,[[1060,51],[1060,91]],'#1e382b',2);
- box(c,1125,39,93,84,10,s?.shovel?'#cfa85e':'#526e43',s?.shovel?'#ffebad':'#9aaf80',2);
- text(c,'⚒',1171,72,35,'#f5e5c1','900','center');text(c,'铲子',1171,105,13,'#f9f0dd','800','center');
- box(c,1250,39,159,84,10,'#4a6742','#94a97a',2);
- text(c,s?.paused?'▶ 继续':'Ⅱ 暂停',1330,70,22,'#f2e5bf','900','center');
- text(c,'SPACE',1330,105,12,'#d8e3c3','800','center');
+ const grad=c.createLinearGradient(0,0,0,158);
+ grad.addColorStop(0,'#263e28');grad.addColorStop(.5,'#45643a');grad.addColorStop(1,'#193321');
+ c.save();c.shadowColor='#091a11';c.shadowBlur=19;c.shadowOffsetY=6;
+ box(c,10,8,1420,150,17,grad,'#a5a477',3);c.restore();
+ box(c,25,20,178,126,13,'#345337','#a2bc73',2);
+ circle(c,73,73,29,'#f4cb61');
+ text(c,'☀',73,74,34,'#ffefae','900','center');
+ text(c,String(s?.sun??500),137,73,30,'#f9e29d','900','center');
+ text(c,'阳光',113,119,15,'#d9e6c7','800','center');
+ const cards=s?.decks??options.SEEDS.slice(0,10),L=DECK_LAYOUT;
+ for(let i=0;i<10;i++){
+  const x=L.x+(i%5)*L.columnStep,y=L.y+Math.floor(i/5)*L.rowStep;
+  if(cards[i])card(c,cards[i],i,x,y,s);
+  else box(c,x,y,L.width,L.height,8,'#203c2b','#547b4c',1);
+ }
+ const gloveActive=s?.tool==='glove';
+ box(c,847,23,126,115,10,gloveActive?'#b79a57':'#456443',gloveActive?'#fce3a0':'#98b18a',2);
+ gloveSymbol(c,884,83,gloveActive);
+ text(c,s?.gloveMode==='zombie'?'僵尸手套':'植物手套',937,52,13,'#f8efcd','900','center');
+ text(c,s?.gloveCooldown?.[s?.gloveMode||'plant']>0?(s.gloveCooldown[s.gloveMode].toFixed(1)+'s'):'2 / V切换',937,104,12,'#f7e4ba','800','center');
+ box(c,982,30,105,100,10,s?.tool==='shovel'?'#c99c5f':'#4b6743','#a8b58a',2);
+ text(c,'⚒',1034,66,32,'#f5e4be','900','center');text(c,'铲子 1',1034,107,14,'#f5e8c5','900','center');
+ box(c,1096,30,142,100,10,'#496847','#a6b785',2);
+ text(c,s?.paused?'▶ 继续':'Ⅱ 暂停',1166,68,21,'#f8ebc8','900','center');
+ text(c,'SPACE',1166,105,12,'#e0eac8','800','center');
+ box(c,1252,30,157,100,9,'#304d37','#7d9c68',2);
+ text(c,'携带 10 / 10',1330,59,16,'#fff1c5','900','center');
+ text(c,'5列 × 2行',1330,95,14,'#cce1bb','750','center');
 }
 function status(c,s){
  box(c,176,754,1076,54,10,'#182d1ee6','#87a666',2);
@@ -415,6 +430,7 @@ function status(c,s){
   text(c,'空格或右上角继续',720,488,22,'#e2efc7','700','center');
  }
 }
+function L_DECK_X(index){return DECK_LAYOUT.x+(index%5)*DECK_LAYOUT.columnStep;}
 export function drawScene(c,s,options){
  const B=options.BOARD;c.clearRect(0,0,1440,820);
  c.save();
@@ -438,6 +454,17 @@ export function drawScene(c,s,options){
   for(const trail of s.iceTrails||[]){
    const y=B.y+(trail.row+.5)*B.ch;
    oval(c,trail.x,y+23,54,18,'#c3ebf675');
+  }
+  if(s.glovePickup){
+   const pick=s.glovePickup;
+   if(pick.kind==='plant'){
+    const px=B.x+(pick.col+.5)*B.cw,py=B.y+(pick.row+.5)*B.ch;
+    box(c,px-55,py-50,110,104,10,'#fff1ba28','#f3e3a1',3);
+    gloveSymbol(c,px,py-16,true);
+   }else{
+    const z=s.zombies.find(z=>z.id===pick.id);
+    if(z)gloveSymbol(c,z.x,z.y-102,true);
+   }
   }
   for(const crater of s.craters||[]){
    const x=B.x+(crater.col+.5)*B.cw,y=B.y+(crater.row+.52)*B.ch;
@@ -504,16 +531,16 @@ export function drawScene(c,s,options){
  }
  c.restore();
  hud(c,s,options);status(c,s);
- if(s?.hover&&s.hover.y>=20&&s.hover.y<=147&&s.hover.x>=219&&s.hover.x<1003){
-  const index=Math.floor((s.hover.x-219)/112)+(s.page||0)*7;
-  const seed=s.decks[index];
+ if(s?.hover){
+  const index=seedAtPoint(s.hover.x,s.hover.y);
+  const seed=index>=0?s.decks[index]:null;
   if(seed){
-   const x=Math.max(230,Math.min(1020,219+(index%7)*112));
-   box(c,x,166,366,75,12,'#243b2cf0','#dac77b',2);
-   text(c,seed.name,x+15,185,17,'#ffe6a5','900');
-   text(c,'☀ '+seed.cost+'    冷却 '+seed.cooldown+'秒',x+345,186,13,'#f1e1bc','750','right');
+   const x=Math.max(220,Math.min(1030,L_DECK_X(index)));
+   box(c,x,162,386,79,12,'#233b2df5','#c9bd76',2);
+   text(c,seed.name,x+15,182,16,'#ffe5a5','900');
+   text(c,'冷却 '+(seed.cooldown||14)+'秒',x+364,182,13,'#f1e1bc','750','right');
    const desc=seed.desc||'点击草坪即可种植';
-   text(c,desc.length>24?desc.slice(0,23)+'…':desc,x+15,220,13,'#e5f1d3','650');
+   text(c,desc.length>28?desc.slice(0,27)+'…':desc,x+15,219,13,'#e5f1d3','650');
   }
  }
 }
