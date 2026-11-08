@@ -255,3 +255,57 @@ test('garlic redirects zombies to another lane',()=>{
  for(let i=0;i<12;i++)tick(s,.05);
  assert.notEqual(s.zombies[0].row,2);
 });
+
+test('all 29 base sprites and 68 fusion sprites can render in the live battle',()=>{
+ const methods=new Set(['beginPath','roundRect','fill','stroke','arc','ellipse','moveTo','lineTo','strokeRect','fillRect','clearRect','save','restore','translate','scale','rotate','fillText']);
+ const ctx=new Proxy({},{
+  get(obj,key){
+   if(key==='createLinearGradient'||key==='createRadialGradient')return()=>({addColorStop(){}});
+   if(methods.has(key))return()=>{};
+   return obj[key];
+  },
+  set(obj,key,value){obj[key]=value;return true;}
+ });
+ const renderOpts={BOARD,SEEDS,RECIPES,LEVELS,best:1,getPlant,recipeFor};
+ const all=[...SEEDS,...RECIPES];
+ for(let batch=0;batch<all.length;batch+=45){
+  const s=newGame(5,true);
+  for(let i=0;i<45&&i+batch<all.length;i++){
+   const original=all[i+batch];
+   s.grid[Math.floor(i/9)][i%9]=createPlant(original,original.inputs||[original.id]);
+   s.grid[Math.floor(i/9)][i%9].age=20;
+  }
+  assert.doesNotThrow(()=>drawScene(ctx,s,renderOpts),'batch '+batch);
+ }
+});
+
+test('balloon avoids regular pea damage but cactus can hit it',()=>{
+ const s=newGame(5,true);s.sun=999;
+ plantHere(s,2,1,'pea');spawn(s,2,'balloon',BOARD.x+7*BOARD.cw);
+ s.spawnTimer=999;s.skyTimer=999;
+ const hp=s.zombies[0].hp;
+ for(let i=0;i<60;i++)tick(s,.05);
+ assert.equal(s.zombies[0].hp,hp);
+ const s2=newGame(5,true);s2.sun=999;
+ plantHere(s2,2,1,'cactus');spawn(s2,2,'balloon',BOARD.x+7*BOARD.cw);
+ s2.spawnTimer=999;s2.skyTimer=999;
+ for(let i=0;i<80;i++)tick(s2,.05);
+ assert.ok(s2.zombies[0].hp<hp);
+});
+
+test('pumpkin reapplication heals damaged cover, deducts sun once',()=>{
+ const s=newGame(5,true);s.sun=999;
+ plantHere(s,1,2,'pea');plantHere(s,1,2,'pumpkin');
+ s.grid[1][2].cover=1100;s.cooldowns.pumpkin=0;
+ const old=s.sun;
+ assert.ok(plantHere(s,1,2,'pumpkin'));
+ assert.equal(s.grid[1][2].cover,4000);
+ assert.equal(s.sun,old-getPlant('pumpkin').cost);
+});
+
+test('all registered specs have unique identifiers and valid costs',()=>{
+ const all=[...SEEDS,...RECIPES];
+ assert.equal(all.length,new Set(all.map(v=>v.id)).size);
+ assert.ok(SEEDS.every(v=>Number.isFinite(v.cost)&&v.cost>=0));
+ assert.ok(all.every(v=>Number.isFinite(v.hp)&&v.hp>0));
+});
