@@ -279,19 +279,27 @@ function updatePlant(s,p,r,c,dt){
 }
 function advanceProjectiles(s,dt){
  for(const b of s.bullets){
-  b.x+=b.speed*dt;b.life-=dt;
+  b.x+=b.speed*dt;
+  if(b.star)b.y+=(b.vy||0)*dt;
+  b.life-=dt;
   if(b.range!==undefined&&Math.abs(b.x-b.originX)>b.range)b.life=-1;
+  if(b.y<BOARD.y-60||b.y>BOARD.y+BOARD.h+60)b.life=-1;
   if(b.life<=0)continue;
-  for(let c=0;c<BOARD.cols;c++){
+  for(let c=0;c<BOARD.cols&&!b.star;c++){
    const p=s.grid[b.row][c],spec=p&&getPlant(p.id),tx=BOARD.x+(c+.5)*BOARD.cw;
    if(!spec?.torchBonus||b.torchCells.has(c)||b.speed<=0||b.icon.includes('ice'))continue;
    if(b.x>=tx-7&&b.x<=tx+22){b.torchCells.add(c);b.damage+=spec.torchBonus;
      b.splash??={damage:Math.round(b.damage*.25),radius:.6};b.icon='fire-pea';particles(s,b.x,b.y,'#ffb84f',6);}
   }
   for(const z of s.zombies){
-   if(z.dead||z.hp<=0||z.row!==b.row||b.hit.has(z.id))continue;
-   if(Math.abs(z.x-b.x)>22||Math.abs(z.y-b.y)>58)continue;
+   if(z.dead||z.hp<=0||z.charmed||(!b.star&&z.row!==b.row)||b.hit.has(z.id))continue;
+   if(z.airborne&&!b.antiAir&&!b.star)continue;
+   const hit=b.star?Math.hypot(z.x-b.x,(z.y-38)-b.y)<35
+    :Math.abs(z.x-b.x)<22&&Math.abs(z.y-b.y)<58;
+   if(!hit)continue;
    b.hit.add(z.id);z.hp-=b.damage;
+   if(b.butterChance&&Math.random()<b.butterChance){z.hp-=b.butterDamage;z.frozen=Math.max(z.frozen||0,b.butterStun);z.butter=Math.max(z.butter||0,b.butterStun);particles(s,z.x,z.y-100,'#ffe883',12);}
+   if(b.poison)z.poison=Math.max(z.poison||0,b.poison);
    if(b.freezeHit){z.slow=Math.max(z.slow,3.5);z.frost=(z.frost||0)+b.freezeHit;if(z.frost>=100){z.frozen=Math.max(z.frozen||0,2);z.frost=0;}}
    if(b.burn)z.burn=Math.max(z.burn,b.burn);
    particles(s,b.x,b.y,b.freezeHit?'#b5f2ff':b.burn?'#ffbb54':'#c3dc7b',4);
@@ -306,21 +314,45 @@ function advanceZombies(s,dt){
  for(const z of s.zombies){
   if(z.hp<=0)continue;
   z.anim+=dt;z.slow=Math.max(0,z.slow-dt);z.frozen=Math.max(0,(z.frozen||0)-dt);
+  z.butter=Math.max(0,(z.butter||0)-dt);
   if(z.burn>0){z.hp-=7*dt;z.burn=Math.max(0,z.burn-dt);}
+  if(z.poison>0){z.hp-=6*dt;z.poison=Math.max(0,z.poison-dt);}
+  if(z.hp<=0)continue;
+  if(z.charmed){
+   const enemy=s.zombies.find(other=>!other.charmed&&other.hp>0&&other.row===z.row&&Math.abs(other.x-z.x)<44);
+   if(enemy){
+    z.biting-=dt;
+    if(z.biting<=0){enemy.hp-=z.attack;z.biting=z.period;}
+   }else z.x+=z.speed*dt;
+   if(z.x>BOARD.x+BOARD.w+170)z.hp=0;
+   continue;
+  }
   const c=Math.floor((z.x-BOARD.x)/BOARD.cw);
   const plant=c>=0&&c<9?s.grid[z.row][c]:null;
   const px=BOARD.x+(c+.5)*BOARD.cw;
   if(z.frozen>0)continue;
-  if(plant&&!getPlant(plant.id)?.low&&Math.abs(z.x-px)<49){
+  if(plant&&!getPlant(plant.id)?.low&&!z.airborne&&Math.abs(z.x-px)<49){
    z.biting-=dt;
    if(z.biting<=0){
-    const was=plant.hp,now=plant.hp-z.attack;
-    plant.hp=now;z.biting=z.period;
     const spec=getPlant(plant.id);
-    if(spec.sunOnCrack&&Math.floor(was/(plant.maxHp/4))>Math.floor(Math.max(0,now)/(plant.maxHp/4))){
+    const hit=spec.garlic?Math.min(15,z.attack):z.attack;
+    if(plant.cover>0){
+     plant.cover=Math.max(0,plant.cover-hit);
+     particles(s,px,z.y-45,'#ffac5d',4);
+    }else{
+     const was=plant.hp;
+     plant.hp-=hit;
+     if(spec.hypno){charmZombie(s,z);plant.hp=0;}
+     if(spec.sunOnCrack&&Math.floor(was/(plant.maxHp/4))>Math.floor(Math.max(0,plant.hp)/(plant.maxHp/4)))
       addSun(s,px,z.y-55,spec.sunOnCrack);
+     if(plant.hp<=0)removePlant(s,z.row,c,plant);
     }
-    if(plant.hp<=0)removePlant(s,z.row,c,plant);
+    z.biting=z.period;
+    if(spec.garlic&&!z.charmed){
+     const newRow=z.row===0?1:z.row===BOARD.rows-1?BOARD.rows-2:z.row+(Math.random()<.5?-1:1);
+     z.row=newRow;z.y=BOARD.y+(newRow+.55)*BOARD.ch;z.x+=20;
+     particles(s,z.x,z.y-48,'#e9c394',6);
+    }
    }
   }else{z.biting=0;z.x-=z.speed*(z.slow>0?.5:1)*dt;}
   if(z.x<BOARD.x-30&&s.mowers[z.row]){
@@ -342,7 +374,7 @@ function spawnWave(s){
  if(s.t>s.def.length)return;
  const stage=Math.floor(s.t/(s.def.length/s.def.waves));
  const row=Math.floor(rnd(0,5)),roll=Math.random();
- const type=stage>=3&&roll<.15?'bucket':stage>=1&&roll<.46?'cone':stage>=2&&roll<.55?'runner':'normal';
+ const type=stage>=3&&roll<.13?'bucket':stage>=2&&roll<.22?'balloon':stage>=2&&roll<.31?'newspaper':stage>=1&&roll<.54?'cone':stage>=2&&roll<.60?'runner':'normal';
  spawn(s,row,type);
  if(stage>=2&&Math.random()<.27)spawn(s,Math.floor(rnd(0,5)),'normal',1470);
  s.spawnCount++;
@@ -352,6 +384,10 @@ export function tick(s,dt){
  if(!s||s.phase!=='playing'||s.paused)return;
  dt=Math.min(.05,Math.max(0,dt));s.t+=dt;s.messageLeft=Math.max(0,s.messageLeft-dt);
  s.shake=Math.max(0,s.shake-dt*27);
+ s.screenFlash=Math.max(0,s.screenFlash-dt*2.2);
+ s.windLeft=Math.max(0,s.windLeft-dt);
+ for(const crater of s.craters)crater.life-=dt;
+ s.craters=s.craters.filter(crater=>crater.life>0);
  for(const p of s.decks)s.cooldowns[p.id]=Math.max(0,(s.cooldowns[p.id]||0)-dt);
  s.skyTimer-=dt;
  if(s.skyTimer<=0){addSun(s,rnd(BOARD.x+45,BOARD.x+BOARD.w-45),rnd(BOARD.y+70,BOARD.y+BOARD.h-30),25,true);s.skyTimer=rnd(7,11);}
@@ -364,5 +400,5 @@ export function tick(s,dt){
  s.suns=s.suns.filter(u=>u.life>0);
  for(const p of s.effects){p.x+=p.vx*dt;p.y+=p.vy*dt;p.vy+=190*dt;p.life-=dt;}
  s.effects=s.effects.filter(p=>p.life>0);
- if(s.t>=s.def.length&&s.zombies.length===0){s.winTimer+=dt;if(s.winTimer>.8)s.phase='won';}
+ if(s.t>=s.def.length&&!s.zombies.some(z=>!z.charmed)){s.winTimer+=dt;if(s.winTimer>.8)s.phase='won';}
 }
