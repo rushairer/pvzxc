@@ -39,7 +39,9 @@ function projectile(b){
  const copy={...asObject(b)};
  copy.hit=Array.from(b?.hit||[]).filter(x=>Number.isInteger(x)).slice(0,150);
  copy.torchCells=Array.from(b?.torchCells||[]).filter(x=>Number.isInteger(x)).slice(0,9);
- if(copy.hitSun?.owner)delete copy.hitSun; // restore without dangling plant reference
+ if(copy.hitSun?.owner){
+  copy.hitSun={row:integer(copy.hitSun.row,0,0,4),col:integer(copy.hitSun.col,0,0,8),each:integer(copy.hitSun.each,3,1,50)};
+ }
  return copy;
 }
 function restoreProjectile(b){
@@ -59,7 +61,8 @@ export function makeSnapshot(s,now=Date.now()){
   craters:s.craters,graves:s.graves||[],iceTrails:s.iceTrails||[],coins:s.coins,cooldowns:s.cooldowns,
   kills:s.kills,spawnCount:s.spawnCount,spawnTimer:s.spawnTimer,skyTimer:s.skyTimer,
   wave:s.wave,waveClock:s.waveClock,flags:s.flags,uid:s.uid,solved:Array.from(s.solved),
-  totalSuns:s.totalSuns,page:s.page,lastPlanted:s.lastPlanted,record:s.record
+  totalSuns:s.totalSuns,page:s.page,lastPlanted:s.lastPlanted,record:s.record,
+  quickRecipe:s.quickRecipe,selected:s.selected
  };
  return {version:SAVE_VERSION,savedAt:now,state:clonePlain(source)};
 }
@@ -73,6 +76,10 @@ export function restoreSnapshot(snapshot){
  s.zombies=(Array.isArray(raw.zombies)?raw.zombies:[]).slice(0,400).map(worldZombie).filter(Boolean);
  for(const z of s.zombies)z.y=188+(z.row+.55)*108;
  s.bullets=(Array.isArray(raw.bullets)?raw.bullets:[]).slice(0,600).map(restoreProjectile).filter(b=>typeof b.x==='number'&&typeof b.y==='number');
+ for(const b of s.bullets)if(b.hitSun){
+  const owner=s.grid[b.hitSun.row]?.[b.hitSun.col];
+  b.hitSun=owner?{owner,each:integer(b.hitSun.each,3,1,50)}:null;
+ }
  s.suns=(Array.isArray(raw.suns)?raw.suns:[]).slice(0,200).map(asObject);
  s.mowers=Array.isArray(raw.mowers)&&raw.mowers.length===5?raw.mowers.map(Boolean):Array(5).fill(true);
  s.craters=(Array.isArray(raw.craters)?raw.craters:[]).slice(0,45).map(asObject).filter(c=>number(c.life,0)>0);
@@ -88,6 +95,9 @@ export function restoreSnapshot(snapshot){
  s.flags=integer(raw.flags);s.uid=integer(raw.uid,1);
  s.totalSuns=integer(raw.totalSuns);s.page=integer(raw.page,0,0,Math.ceil(SEEDS.length/7)-1);
  s.lastPlanted=getPlant(raw.lastPlanted)?.id||null;
+ s.quickRecipe=RECIPES.some(recipe=>recipe.id===raw.quickRecipe)?raw.quickRecipe:null;
+ s.selected=getPlant(raw.selected)?.id||null;
+ if(s.selected&&!SEEDS.some(seed=>seed.id===s.selected)&&s.selected!==s.quickRecipe)s.selected=null;
  s.record=integer(raw.record,s.wave,0);s.solved=new Set((Array.isArray(raw.solved)?raw.solved:[]).filter(x=>RECIPES.some(r=>r.id===x)));
  s.phase=raw.phase==='lost'?'lost':'playing';s.paused=false;s.hover=null;
  s.message='存档已载入 · 第 '+s.wave+' 波';s.messageLeft=4;
