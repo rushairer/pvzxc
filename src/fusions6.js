@@ -1,0 +1,163 @@
+/**
+ * Alpha 0.6: 89 (or fewer if previously implemented) explicit fusion branches.
+ * Family names cross-checked where possible against the PvZ Fusion BWIKI:
+ * https://wiki.biligame.com/pvzrh/融合图鉴/主线/坚果
+ * https://wiki.biligame.com/pvzrh/融合图鉴/主线/大嘴花
+ * Other pairings are experimental; all balancing and effect values are
+ * original playable approximations, not claims of exact in-game equivalence.
+ */
+const ROWS=[
+ ['v6-wall-fume','坚果大蘑菇','wall','fume','fume'],
+ ['v6-wall-hypno','魅惑坚果','wall','hypno','hypno'],
+ ['v6-wall-scaredy','胆小坚果','wall','scaredy','scaredy'],
+ ['v6-wall-ice-shroom','寒冰坚果','wall','ice-shroom','ice-shroom'],
+ ['v6-wall-tangle','水草坚果','wall','tangle','tangle'],
+ ['v6-wall-blover','三叶坚果','wall','blover','blover'],
+ ['v6-wall-pumpkin','坚果南瓜','wall','pumpkin','pumpkin'],
+ ['v6-wall-magnet','磁力坚果','wall','magnet','magnet'],
+ ['v6-wall-cabbage','卷心菜坚果','wall','cabbage','cabbage'],
+ ['v6-wall-flowerpot','坚果花盆','wall','flowerpot','flowerpot'],
+ ['v6-wall-kernel','黄油坚果','wall','kernel','kernel'],
+ ['v6-wall-marigold','银坚果','wall','marigold','marigold'],
+ ['v6-wall-seashroom','海蘑菇坚果','wall','seashroom','seashroom'],
+ ['v6-wall-plantern','流明坚果','wall','plantern','plantern'],
+ ['v6-wall-tallnut','加厚高坚果','wall','tallnut','tallnut'],
+ ['v6-wall-spikerock','钢刺坚果','wall','spikerock','spikerock'],
+ ['v6-wall-snowpea','寒冰豌豆坚果','wall','snowpea','snowpea'],
+ ['v6-wall-lilypad','坚果睡莲','wall','lilypad','lilypad'],
+ ['v6-wall-cattail','猫尾坚果','wall','cattail','cattail'],
+ ['v6-wall-cobcannon','巨炮坚果','wall','cobcannon','cobcannon'],
+ ['v6-wall-gloom','忧郁坚果','wall','gloom','gloom'],
+ ['v6-wall-wintermelon','寒冰瓜坚果','wall','wintermelon','wintermelon'],
+ ['v6-chomper-puff','小嘴菇','chomper','puff','puff'],
+ ['v6-chomper-fume','大嘴喷菇','chomper','fume','fume'],
+ ['v6-chomper-hypno','魅惑大嘴花','chomper','hypno','hypno'],
+ ['v6-chomper-scaredy','大嘴胆小菇','chomper','scaredy','scaredy'],
+ ['v6-chomper-ice-shroom','寒冰大嘴花','chomper','ice-shroom','ice-shroom'],
+ ['v6-chomper-squash','窝瓜大嘴花','chomper','squash','squash'],
+ ['v6-chomper-threepeater','三头大嘴花','chomper','threepeater','threepeater'],
+ ['v6-chomper-jalapeno','火辣大嘴花','chomper','jalapeno','jalapeno'],
+ ['v6-chomper-spikeweed','尖刺大嘴花','chomper','spikeweed','spikeweed'],
+ ['v6-chomper-torch','火炬大嘴花','chomper','torch','torch'],
+ ['v6-chomper-seashroom','海蘑菇大嘴花','chomper','seashroom','seashroom'],
+ ['v6-chomper-cactus','仙人掌大嘴花','chomper','cactus','cactus'],
+ ['v6-chomper-blover','飓风大嘴花','chomper','blover','blover'],
+ ['v6-chomper-starfruit','杨桃大嘴花','chomper','starfruit','starfruit'],
+ ['v6-chomper-pumpkin','南瓜大嘴花','chomper','pumpkin','pumpkin'],
+ ['v6-chomper-magnet','磁力大嘴花','chomper','magnet','magnet'],
+ ['v6-chomper-cabbage','卷心菜大嘴花','chomper','cabbage','cabbage'],
+ ['v6-chomper-kernel','黄油大嘴花','chomper','kernel','kernel'],
+ ['v6-chomper-umbrella','叶伞大嘴花','chomper','umbrella','umbrella'],
+ ['v6-chomper-marigold','银大嘴花','chomper','marigold','marigold'],
+ ['v6-chomper-cattail','猫尾大嘴花','chomper','cattail','cattail'],
+ ['v6-chomper-wintermelon','寒霜瓜大嘴花','chomper','wintermelon','wintermelon'],
+ ['v6-cherry-puff','樱桃小喷菇','cherry','puff','puff'],
+ ['v6-cherry-fume','樱桃大喷菇','cherry','fume','fume'],
+ ['v6-cherry-hypno','魅惑樱桃','cherry','hypno','hypno'],
+ ['v6-cherry-scaredy','胆小樱桃','cherry','scaredy','scaredy'],
+ ['v6-cherry-ice-shroom','寒冰樱桃','cherry','ice-shroom','ice-shroom'],
+ ['v6-cherry-squash','窝瓜樱桃','cherry','squash','squash'],
+ ['v6-cherry-spikeweed','樱桃地刺','cherry','spikeweed','spikeweed'],
+ ['v6-cherry-seashroom','海洋樱桃','cherry','seashroom','seashroom'],
+ ['v6-cherry-cactus','仙人掌樱桃','cherry','cactus','cactus'],
+ ['v6-cherry-blover','飓风樱桃','cherry','blover','blover'],
+ ['v6-cherry-starfruit','杨桃樱桃','cherry','starfruit','starfruit'],
+ ['v6-cherry-pumpkin','南瓜樱桃','cherry','pumpkin','pumpkin'],
+ ['v6-cherry-magnet','磁力樱桃','cherry','magnet','magnet'],
+ ['v6-cherry-cabbage','卷心菜樱桃','cherry','cabbage','cabbage'],
+ ['v6-cherry-kernel','黄油樱桃','cherry','kernel','kernel'],
+ ['v6-cherry-garlic','大蒜樱桃','cherry','garlic','garlic'],
+ ['v6-cherry-umbrella','樱桃保护伞','cherry','umbrella','umbrella'],
+ ['v6-cherry-marigold','金盏樱桃','cherry','marigold','marigold'],
+ ['v6-cherry-cattail','樱桃猫尾草','cherry','cattail','cattail'],
+ ['v6-cherry-gloom','樱桃忧郁菇','cherry','gloom','gloom'],
+ ['v6-cherry-melon','樱桃西瓜投手','cherry','melon','melon'],
+ ['v6-cherry-wintermelon','寒冰樱桃西瓜','cherry','wintermelon','wintermelon'],
+ ['v6-potato-puff','小喷菇土豆雷','potato','puff','puff'],
+ ['v6-potato-fume','大喷菇土豆雷','potato','fume','fume'],
+ ['v6-potato-hypno','魅惑土豆雷','potato','hypno','hypno'],
+ ['v6-potato-scaredy','胆小土豆雷','potato','scaredy','scaredy'],
+ ['v6-potato-ice-shroom','寒冰土豆雷','potato','ice-shroom','ice-shroom'],
+ ['v6-potato-threepeater','三线土豆雷','potato','threepeater','threepeater'],
+ ['v6-potato-jalapeno','火辣土豆雷','potato','jalapeno','jalapeno'],
+ ['v6-potato-spikeweed','地刺土豆雷','potato','spikeweed','spikeweed'],
+ ['v6-potato-cactus','仙人掌土豆雷','potato','cactus','cactus'],
+ ['v6-potato-blover','飓风土豆雷','potato','blover','blover'],
+ ['v6-potato-starfruit','杨桃土豆雷','potato','starfruit','starfruit'],
+ ['v6-potato-pumpkin','南瓜土豆雷','potato','pumpkin','pumpkin'],
+ ['v6-potato-magnet','磁力土豆雷','potato','magnet','magnet'],
+ ['v6-potato-cabbage','卷心菜土豆雷','potato','cabbage','cabbage'],
+ ['v6-potato-kernel','玉米土豆雷','potato','kernel','kernel'],
+ ['v6-potato-umbrella','保护伞土豆雷','potato','umbrella','umbrella'],
+ ['v6-potato-marigold','银土豆雷','potato','marigold','marigold'],
+ ['v6-potato-cattail','猫尾土豆雷','potato','cattail','cattail'],
+ ['v6-potato-seashroom','海蘑菇土豆雷','potato','seashroom','seashroom'],
+ ['v6-potato-tangle','水草土豆雷','potato','tangle','tangle'],
+ ['v6-potato-lilypad','睡莲土豆雷','potato','lilypad','lilypad'],
+ ['v6-potato-gravebuster','墓碑土豆雷','potato','gravebuster','gravebuster'],
+ ['v6-potato-wintermelon','冰瓜土豆雷','potato','wintermelon','wintermelon']
+];
+const TRAITS={
+ 'fume':{damage:24,range:4.5,spray:true,pierce:true},
+ 'hypno':{hypno:true,charmChance:.14},
+ 'scaredy':{scaredy:1,damage:24,interval:1.5},
+ 'ice-shroom':{freezeAura:4,freezeHit:22},
+ 'tangle':{tangle:{range:1.05,damage:1800}},
+ 'blover':{antiAir:true,windPulse:{interval:13}},
+ 'pumpkin':{coverOnPlant:1200},
+ 'magnet':{magnet:{interval:12,range:3.5}},
+ 'cabbage':{damage:48,interval:2.7,lob:true},
+ 'flowerpot':{platform:'roof'},
+ 'kernel':{damage:38,interval:2.7,lob:true,butterChance:.26,butterDamage:35,butterStun:4},
+ 'marigold':{coinProduction:{interval:23}},
+ 'seashroom':{damage:24,interval:1.5,range:2.6,spore:true},
+ 'plantern':{lantern:true},
+ 'tallnut':{hp:7800},
+ 'spikerock':{spike:{damage:65,interval:1},low:true},
+ 'snowpea':{damage:30,interval:1.5,freezeHit:24},
+ 'lilypad':{platform:'water'},
+ 'cattail':{damage:27,interval:1.7,shots:2,homing:true,antiAir:true},
+ 'cobcannon':{cannon:{damage:1900,radius:1.8,interval:21}},
+ 'gloom':{gloom:{damage:30,interval:1.05,range:1.5}},
+ 'wintermelon':{damage:100,interval:3.1,lob:true,freezeHit:30,splash:{damage:30,radius:1.2}},
+ 'puff':{damage:22,interval:1.5,range:2.6,spore:true},
+ 'squash':{miniSquash:{interval:5,damage:500,range:1.1}},
+ 'threepeater':{damage:28,interval:1.6,triple:true},
+ 'jalapeno':{damage:40,interval:1.7,burn:5},
+ 'spikeweed':{spike:{damage:35,interval:1},low:true},
+ 'torch':{torchBonus:26,burnAura:4},
+ 'cactus':{damage:28,interval:1.5,antiAir:true},
+ 'starfruit':{damage:27,interval:1.5,star:true},
+ 'umbrella':{umbrella:true},
+ 'garlic':{garlic:true,poisonAura:4},
+ 'melon':{damage:88,interval:3,lob:true,splash:{damage:35,radius:1.1}},
+ 'gravebuster':{graveBuster:true}
+};
+const BASE={
+ wall:{hp:4400,damage:18,interval:2.8,defensive:true},
+ chomper:{hp:650,chomp:{range:1.3,digest:19},defensive:false},
+ cherry:{hp:380,damage:32,interval:2.1,onDeathExplosion:{damage:1100,radius:1.45}},
+ potato:{hp:320,mine:{arm:9.5,damage:2100,radius:1.25}}
+};
+function build(row){
+ const [id,name,base,ingredient,icon]=row;
+ const trait=TRAITS[ingredient]||{},stats={...BASE[base],...trait};
+ if(base==='wall'&&ingredient==='tallnut')stats.hp=9000;
+ if(base==='wall'&&ingredient==='spikerock')stats.hp=5800;
+ if(base==='chomper'&&ingredient==='hypno')stats.hypno=true;
+ if(base==='chomper'&&ingredient==='ice-shroom')stats.freezeAura=4;
+ if(base==='chomper'&&ingredient==='fume')stats.chomp={range:1.75,digest:13};
+ if(base==='chomper'&&ingredient==='kernel')stats.chomp={range:1.4,digest:18};
+ if(base==='cherry'&&ingredient==='ice-shroom')stats.instant={kind:'ice',delay:.75,damage:320,freeze:5,chill:10};
+ if(base==='cherry'&&ingredient==='squash')stats.squash={damage:2500,range:1.2,radius:1.2};
+ if(base==='cherry'&&ingredient==='blover')stats.instant={kind:'wind',delay:.9};
+ if(base==='cherry'&&ingredient==='wintermelon')stats.splash={damage:115,radius:1.4};
+ if(base==='cherry'&&ingredient==='starfruit')stats.splash={damage:40,radius:1};
+ if(base==='potato'&&ingredient==='ice-shroom')stats.mine={arm:9,damage:2100,radius:1.15,freeze:4};
+ if(base==='potato'&&ingredient==='jalapeno')stats.mine={arm:7,damage:2300,radius:1.65};
+ if(base==='potato'&&ingredient==='spikeweed')stats.spike={damage:25,interval:1};
+ if(base==='potato'&&ingredient==='wintermelon')stats.mine={arm:10,damage:1800,radius:1.6,freeze:4};
+ return {id,name,inputs:[base,ingredient],icon,approximate:true,source:'experimental-branch',hp:300,...stats,
+  desc:name+'：融合效果为可玩近似；植物可以参与正常战斗与后续融合。'};
+}
+export const FUSIONS_V6=Object.freeze(ROWS.map(build));
