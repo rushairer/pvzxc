@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#182e1d">
+  <meta name="description" content="融合花园：一个可直接在浏览器中游玩的原创植物融合塔防实验项目。">
+  <title>融合花园 · PvZXC</title>
+  <link rel="stylesheet" href="./styles.css">
+</head>
+<body>
+  <div class="app-shell">
+    <header class="site-head">
+      <a class="wordmark" href="./" aria-label="融合花园首页"><span class="mark-icon">✿</span><span>融合花园 <em>PVZXC</em></span></a>
+      <div class="header-right"><span class="version">WEB · ALPHA 0.1</span><button class="plain-button" id="headerHelp" type="button">玩法说明 <span aria-hidden="true">?</span></button></div>
+    </header>
+    <main>
+      <div class="game-frame">
+        <canvas id="game" width="1440" height="820" aria-label="融合花园战斗场景：选择植物卡牌，点击草坪种植，将植物种在另一株植物上进行融合。">您的浏览器不支持 Canvas。</canvas>
+        <div class="overlay is-visible" id="mainOverlay" role="dialog" aria-modal="true" aria-labelledby="overlayTitle">
+          <div class="menu-card">
+            <div class="menu-kicker">PLANT FUSION · STRATEGY DEFENSE</div>
+            <div class="menu-flower" aria-hidden="true">✿</div>
+            <h1 id="overlayTitle">融合花园</h1>
+            <p id="overlayDescription">把两株植物种在同一块草坪上，解锁新的战斗能力。收集阳光，布置防线，抵御五波僵尸进攻！</p>
+            <div class="menu-actions">
+              <button class="action-button primary" id="primaryAction" type="button">▶ 开始冒险</button>
+              <button class="action-button secondary" id="secondaryAction" type="button">查看融合图鉴</button>
+            </div>
+            <div class="menu-tip">原创绘制的浏览器实验版本 · 无需下载安装</div>
+          </div>
+        </div>
+        <div class="overlay guide-overlay" id="guideOverlay" role="dialog" aria-modal="true" aria-labelledby="guideTitle" aria-hidden="true">
+          <div class="guide-card">
+            <header class="guide-head"><div><span class="menu-kicker">GAME GUIDE</span><h2 id="guideTitle">融合图鉴与操作</h2></div><button class="close-button" id="closeGuide" type="button" aria-label="关闭图鉴">×</button></header>
+            <div class="guide-intro">选择上方卡牌，再点击草坪种植；选择另一张卡牌，点击已有植物即可融合。击败所有波次获得胜利。</div>
+            <div class="shortcuts"><span>数字 1–8：选植物</span><span>0 / X：铲子</span><span>空格：暂停</span><span>Esc：取消选择</span><span>右键：取消选择</span></div>
+            <div class="guide-section-title">当前版本的双植物配方</div>
+            <div class="recipe-grid" id="recipeGrid"></div>
+            <div class="guide-foot">首版聚焦白天草坪与双植物融合；未包含原融合版全部植物、地图及特殊关卡。</div>
+          </div>
+        </div>
+        <div class="rotate-tip">横屏体验更好 · 请旋转设备</div>
+      </div>
+      <div class="below-game">
+        <div class="play-instruction"><strong>玩法：</strong>点选种子 → 点击草格种植 → 再次点击有植物的草格进行融合。点击落下的阳光收集资源。</div>
+        <span class="copyright-note">独立学习项目；画面与程序为原创实现，非官方游戏。</span>
+      </div>
+    </main>
+    <footer class="site-footer"><span>PVZXC · Built with Canvas 2D</span><a href="https://github.com/rushairer/pvzxc" target="_blank" rel="noopener noreferrer">GitHub 源码 ↗</a></footer>
+  </div>
+  <script type="module" src="./src/main.js"></script>
+</body>
+</html>
