@@ -87,7 +87,8 @@ export function restoreSnapshot(snapshot){
  s.iceTrails=(Array.isArray(raw.iceTrails)?raw.iceTrails:[]).slice(0,100).map(asObject).filter(t=>number(t.life,0)>0);
  s.coins=number(raw.coins,0,0,1e9);
  const cooldowns=asObject(raw.cooldowns);
- s.cooldowns=Object.fromEntries(SEEDS.map(p=>[p.id,number(cooldowns[p.id],0,0,120)]));
+ s.cooldowns=Object.fromEntries(Object.entries(cooldowns).filter(([id])=>!!getPlant(id))
+   .map(([id,value])=>[id,number(value,0,0,120)]));
  s.sun=number(raw.sun,500,0,1e9);s.t=number(raw.t,0,0,1e9);
  s.kills=integer(raw.kills);s.spawnCount=integer(raw.spawnCount);
  s.spawnTimer=number(raw.spawnTimer,4,-1,50);s.skyTimer=number(raw.skyTimer,8,-1,30);
