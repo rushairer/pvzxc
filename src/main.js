@@ -188,14 +188,20 @@ function simulate(dt) {
     p.age += dt; p.timer -= dt;
     const x = BOARD_X + (c + .5) * CELL_W;
     const y = BOARD_Y + (r + .6) * CELL_H;
-    if (p.production && p.timer <= 0) { awardSun(x + 8, y - 28, p.production); p.timer = p.interval; }
-    else if (p.damage && p.timer <= 0) {
-      const enemyInLane = state.zombies.some(z => z.row === r && z.x > x - 10 && z.hp > 0);
-      if (enemyInLane) {fire(p,r,c);p.timer = p.interval;}
-      else p.timer = Math.min(0, p.timer);
-    } else if (p.explosive && p.timer <= 0) {
+    if (p.production) {
+      p.sunTimer -= dt;
+      if (p.sunTimer <= 0) {
+        awardSun(x + 8, y - 28, p.production);
+        p.sunTimer += p.parts.length > 1 ? 11 : 13;
+      }
+    }
+    if (p.explosive && p.timer <= 0) {
       const near = state.zombies.some(z => Math.abs(z.row - r) <= 1 && Math.abs(z.x - x) < 160);
       if (near) {explode(x,r,p.explosive,550); state.grid[r][c] = null;}
+    } else if (p.damage && p.timer <= 0) {
+      const enemyInLane = state.zombies.some(z => z.row === r && z.x > x - 10 && z.hp > 0);
+      if (enemyInLane) {fire(p,r,c);p.timer = p.interval;}
+      else p.timer = 0;
     }
   }
   for (const p of state.projectiles) {
