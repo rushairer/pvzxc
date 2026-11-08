@@ -45,10 +45,10 @@ export function plantHere(s,row,col,id){
  if(s.cooldowns[id]>0){message(s,'植物尚在冷却');return false;}
  if(s.sun<item.cost){message(s,'阳光不足');return false;}
  const fusion=cur?recipeFor(cur.id,id):null;
- if(cur&&!fusion){message(s,'这两种植物没有对应融合配方',3);return false;}
  if(cur?.id==='puff'&&id==='puff'&&cur.stacks<3){
   cur.stacks++;s.cooldowns[id]=item.cooldown;message(s,'小喷菇密植 '+cur.stacks+'/3');return true;
  }
+ if(cur&&!fusion){message(s,'这两种植物没有对应融合配方',3);return false;}
  const created=createPlant(fusion||item,cur?[...cur.parts,id]:[id]);
  if(fusion){
    // Fusion inherits the surviving existing plant's damage and planting age only where appropriate.
