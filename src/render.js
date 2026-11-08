@@ -255,6 +255,7 @@ function paintSun(c,s){
  circle(c,0,0,26,'#ffe27a');circle(c,0,0,19,'#f9b847');
  text(c,'☀',0,0,26,'#fff7bb','900','center');c.restore();
 }
+let cachedLawn=null;
 function background(c,B){
  const sky=c.createLinearGradient(0,0,0,820);
  sky.addColorStop(0,'#354f3e');sky.addColorStop(.23,'#96a967');sky.addColorStop(.48,'#779957');sky.addColorStop(1,'#26472d');
@@ -377,7 +378,14 @@ export function drawScene(c,s,options){
  const B=options.BOARD;c.clearRect(0,0,1440,820);
  c.save();
  if(s?.shake)c.translate((Math.random()-.5)*s.shake,(Math.random()-.5)*s.shake);
- background(c,B);
+ if(typeof document!=='undefined'&&typeof c.drawImage==='function'){
+  if(!cachedLawn){
+   const layer=document.createElement('canvas');layer.width=2880;layer.height=1640;
+   const buffer=layer.getContext('2d');buffer.setTransform(2,0,0,2,0,0);
+   background(buffer,B);cachedLawn=layer;
+  }
+  c.drawImage(cachedLawn,0,0,1440,820);
+ }else background(c,B);
  for(let r=0;r<5;r++)if(!s||s.mowers[r])mower(c,B.x-45,B.y+(r+.72)*B.ch);
  if(s){
   if(s.hover&&(s.selected||s.shovel)){
