@@ -2,6 +2,7 @@ import { EXTRA_SEEDS, EXTRA_RECIPES } from './expansion.js';
 import { THIRD_WAVE_SEEDS, THIRD_WAVE_RECIPES } from './expansion3.js';
 import { CLASSIC_SEEDS, WATERMELON_RECIPES, CLASSIC_FUSION_RECIPES } from './classic.js';
 import { FUSIONS_V5 } from './fusions5.js';
+import { FUSIONS_V6 } from './fusions6.js';
 // Base/day plants and additional seasonal plants are separated for maintainability.
 // Design references: docs/REFERENCE.md. Further exotic classes deliberately omitted.
 export const SEEDS = Object.freeze([
@@ -46,7 +47,8 @@ export const RECIPES = Object.freeze([
   ...THIRD_WAVE_RECIPES,
   ...WATERMELON_RECIPES,
   ...CLASSIC_FUSION_RECIPES,
-  ...FUSIONS_V5
+  ...FUSIONS_V5,
+  ...FUSIONS_V6
 ]);
 export function fusionKey(a,b){return [a,b].sort().join('+');}
 const recipes=new Map(RECIPES.filter(recipe=>!recipe.ordered).map(recipe=>[fusionKey(...recipe.inputs),recipe]));
