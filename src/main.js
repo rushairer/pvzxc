@@ -9,6 +9,7 @@ const heading=document.getElementById('overlayTitle'),description=document.getEl
 const recipeGrid=document.getElementById('recipeGrid');
 const LS_KEY='pvzxc.progress.v2';
 let best=1,last=performance.now(),game=null,lastPhase='menu',scene='menu',audio=null;
+const PAGE_SIZE=7;
 try{best=Math.max(1,Math.min(LEVELS.length,Number(localStorage.getItem(LS_KEY))||1));}catch{}
 function sound(frequency=440,duration=.1,type='sine',volume=.025){
  try{
@@ -24,10 +25,12 @@ function menu(){
  scene='menu';game=null;heading.textContent='融合花园';
  description.textContent='按照融合版的白天关卡规则，从基础植物一步步融合进阶。守住五路草坪！';
  primary.textContent='▶ 开始冒险';secondary.textContent='融合图鉴';
+ document.getElementById('freeAction').hidden=false;
  overlay.classList.add('is-visible');
 }
 function start(level=best,freeMode=false){
  game=newGame(level,freeMode);scene='playing';lastPhase='playing';
+ document.getElementById('freeAction').hidden=true;
  overlay.classList.remove('is-visible');sound(650,.12,'triangle');
 }
 function showResult(){
@@ -49,6 +52,7 @@ function closeGuide(){
  guide.classList.remove('is-visible');guide.setAttribute('aria-hidden','true');
 }
 document.getElementById('headerHelp').addEventListener('click',openGuide);
+document.getElementById('freeAction').addEventListener('click',()=>start(5,true));
 document.getElementById('closeGuide').addEventListener('click',closeGuide);
 guide.addEventListener('click',ev=>{if(ev.target===guide)closeGuide();});
 primary.addEventListener('click',()=>{
@@ -73,11 +77,15 @@ function pointerAction(x,y){
  if(!game||scene!=='playing'||game.paused||guide.classList.contains('is-visible'))return;
  if(collectAt(game,x,y)){sound(770,.08,'triangle');return;}
  if(y>=13&&y<=150){
-  if(x>=219&&x<219+8*112){
-   const i=Math.floor((x-219)/112);
+  if(x>=219&&x<219+PAGE_SIZE*112){
+   const i=Math.floor((x-219)/112)+game.page*PAGE_SIZE;
    const seed=game.decks[i];
    if(seed){game.selected=game.selected===seed.id?null:seed.id;game.shovel=false;sound(460,.06);}
    return;
+  }
+  if(x>=1003&&x<=1117){
+   const pages=Math.max(1,Math.ceil(game.decks.length/PAGE_SIZE));
+   game.page=(game.page+(x<1060?-1:1)+pages)%pages;sound(530,.07);return;
   }
   if(x>=1122&&x<=1224){game.shovel=!game.shovel;game.selected=null;sound(330,.07);return;}
   if(x>=1246){game.paused=!game.paused;sound(420,.07);return;}
@@ -95,7 +103,11 @@ canvas.addEventListener('contextmenu',ev=>{ev.preventDefault();if(game){game.sel
 document.addEventListener('keydown',ev=>{
  if(ev.key==='Escape'&&guide.classList.contains('is-visible')){closeGuide();return;}
  if(!game||scene!=='playing'||guide.classList.contains('is-visible'))return;
- if(/^[1-8]$/.test(ev.key)){game.selected=game.decks[Number(ev.key)-1]?.id||null;game.shovel=false;}
+ if(/^[1-7]$/.test(ev.key)){game.selected=game.decks[game.page*PAGE_SIZE+Number(ev.key)-1]?.id||null;game.shovel=false;}
+ if(ev.key==='ArrowRight'||ev.key==='ArrowLeft'||ev.key==='Tab'&&!ev.shiftKey){
+   const pages=Math.max(1,Math.ceil(game.decks.length/PAGE_SIZE));game.page=(game.page+(ev.key==='ArrowLeft'?-1:1)+pages)%pages;
+   if(ev.key==='Tab')ev.preventDefault();
+ }
  if(ev.key==='0'||ev.key.toLowerCase()==='x'){game.shovel=!game.shovel;game.selected=null;}
  if(ev.code==='Space'){ev.preventDefault();game.paused=!game.paused;}
  if(ev.key==='Escape'){game.selected=null;game.shovel=false;}
