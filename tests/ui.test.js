@@ -1,0 +1,64 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+
+test('the real browser entrypoint supports endless start, save, load and catalog search',async()=>{
+ const listeners=new Map(),elements=new Map(),store=new Map();
+ const makeNode=(name='div')=>{
+  const classes=new Set(),events=new Map();
+  const node={
+   name,children:[],dataset:{},hidden:false,disabled:false,textContent:'',
+   value:'',style:{},attributes:{},
+   classList:{add:k=>classes.add(k),remove:k=>classes.delete(k),contains:k=>classes.has(k)},
+   addEventListener:(type,cb)=>events.set(type,cb),
+   fire:(type,arg={})=>{const fn=events.get(type);assert.ok(fn,'missing handler '+name+'.'+type);return fn({target:node,preventDefault(){},...arg});},
+   append(...items){node.children.push(...items);},
+   appendChild(item){node.children.push(item);},
+   replaceChildren(){node.children.length=0;},
+   setAttribute(k,v){node.attributes[k]=v;},
+   focus(){},
+   getContext(){return {setTransform(){}};},
+   getBoundingClientRect(){return {left:0,top:0,width:1440,height:820};}
+  };return node;
+ };
+ globalThis.document={
+  getElementById(id){if(!elements.has(id))elements.set(id,makeNode(id));return elements.get(id);},
+  createElement(tag){return makeNode(tag);},
+  addEventListener(type,fn){listeners.set(type,fn);},
+  visibilityState:'visible'
+ };
+ globalThis.window={devicePixelRatio:1,addEventListener(){},confirm(){return true;}};
+ globalThis.localStorage={getItem:k=>store.get(k)??null,setItem:(k,v)=>store.set(k,v),removeItem:k=>store.delete(k)};
+ globalThis.requestAnimationFrame=()=>1;
+ try{
+  await import('../src/main.js?test=ui-endless-1');
+  const el=id=>elements.get(id);
+  assert.equal(el('primaryAction').textContent,'▶ 新建无尽战场');
+  assert.equal(el('freeAction').disabled,true);
+  assert.equal(el('recipeGrid').children.length,115);
+  el('primaryAction').fire('click');
+  assert.equal(el('mainOverlay').classList.contains('is-visible'),false);
+  el('quickSave').fire('click');
+  assert.ok(store.has('pvzxc.endless.v1.slot1'));
+  el('quickLoad').fire('click');
+  assert.equal(el('saveSlots').children.length,4);
+  const slot3=el('saveSlots').children[3];
+  slot3.children[1].children[0].fire('click');
+  assert.ok(store.has('pvzxc.endless.v1.slot3'));
+  el('closeSave').fire('click');
+  el('toMenu').fire('click');
+  assert.ok(store.has('pvzxc.endless.v1.auto'));
+  assert.equal(el('freeAction').disabled,false);
+  el('freeAction').fire('click');
+  assert.equal(el('mainOverlay').classList.contains('is-visible'),false);
+  assert.match(el('saveIndicator').textContent,/已载入/);
+  el('secondaryAction').fire('click');
+  assert.equal(el('guideOverlay').classList.contains('is-visible'),true);
+  el('recipeSearch').value='西瓜';
+  el('recipeSearch').fire('input');
+  assert.ok(el('recipeGrid').children.filter(c=>!c.hidden).length>0);
+  el('closeGuide').fire('click');
+  assert.equal(el('guideOverlay').classList.contains('is-visible'),false);
+ }finally{
+  for(const key of ['document','window','localStorage','requestAnimationFrame'])delete globalThis[key];
+ }
+});
