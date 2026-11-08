@@ -1,4 +1,7 @@
 import {drawThirdWavePlant,drawPumpkinCover} from './art3.js';
+import {drawClassicPlant} from './classic-art.js';
+import {paintFusionArt} from './fusion-art.js';
+import {renderZombieAccessories} from './zombie-art.js';
 const TAU=Math.PI*2;
 function box(c,x,y,w,h,r=10,fill='#ffffff',stroke=null,lineWidth=1){
  c.beginPath();c.roundRect(x,y,w,h,r);c.fillStyle=fill;c.fill();
@@ -164,7 +167,9 @@ function paintPlant(c,p,x,y,scale=1,time=0){
  const isSun=icon==='sun'||icon==='twin'||icon==='pea-sun'||icon==='sun-cherry'||icon==='sun-wall'||icon==='sun-potato'||icon==='sun-chomper';
  const isChomper=icon.includes('chomper');
  const isCherry=icon.includes('cherry')&&!isChomper;
- if(drawThirdWavePlant(c,icon,bob,p.age||time)){
+ if(drawClassicPlant(c,p.id,bob,p.age||time)){
+  // Fully distinct portraits for classic seed types.
+ }else if(drawThirdWavePlant(c,icon,bob,p.age||time)){
   // Third-wave plants have individual procedural high-resolution artwork.
  }else if(icon.includes('spike')||icon==='spikeweed'){
   spikes(c,icon.includes('solar'));
@@ -221,9 +226,7 @@ function paintPlant(c,p,x,y,scale=1,time=0){
  else if(icon==='potato-chomper'){circle(c,-13,-65+bob,15,'#8a5ca4');}
  highlightPlant(c,icon,bob);
  if(p.stacks>1)text(c,'×'+p.stacks,28,-16,22,'#fbf4b4','900','center');
- if(p.parts?.length>1){
-  circle(c,30,-91,13,'#f5cf62');text(c,'✦',30,-91,18,'#75451f','900','center');
- }
+ if(p.parts?.length>1)paintFusionArt(c,p,time);
  c.restore();
 }
 function paintZombie(c,z,t){
@@ -426,6 +429,16 @@ export function drawScene(c,s,options){
  }else background(c,B);
  for(let r=0;r<5;r++)if(!s||s.mowers[r])mower(c,B.x-45,B.y+(r+.72)*B.ch);
  if(s){
+  for(const grave of s.graves||[]){
+   const x=B.x+(grave.col+.5)*B.cw,y=B.y+(grave.row+.5)*B.ch;
+   box(c,x-25,y-33,50,68,14,'#8b9184','#4c5a51',3);
+   line(c,[[x-13,y-14],[x+13,y-14]],'#d9ddd2',3);
+   text(c,'RIP',x,y+7,16,'#ece9d5','900','center');
+  }
+  for(const trail of s.iceTrails||[]){
+   const y=B.y+(trail.row+.5)*B.ch;
+   oval(c,trail.x,y+23,54,18,'#c3ebf675');
+  }
   for(const crater of s.craters||[]){
    const x=B.x+(crater.col+.5)*B.cw,y=B.y+(crater.row+.52)*B.ch;
    oval(c,x,y+20,46,26,'#302e2bcb');
