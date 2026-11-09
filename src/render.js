@@ -298,7 +298,7 @@ function paintZombie(c,z,t){
   for(let k=0;k<4;k++)oval(c,(k-1.5)*17,-95-k%2*19,7,17,k%2?'#ffc64a99':'#f3823688');
  }
  if(!hasIllustration)renderZombieAccessories(c,z,t);
- paintZombieSurface(c,z,t);
+ if(!hasIllustration)paintZombieSurface(c,z,t);
  if(z.hp<z.maxHp){box(c,-29,-212,58,7,3,'#3a2b2a');box(c,-28,-211,56*Math.max(0,z.hp/z.maxHp),5,2,'#9bce5b');}
  c.restore();
 }
