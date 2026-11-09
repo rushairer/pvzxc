@@ -4,7 +4,8 @@ import {drawClassicPlant} from './classic-art.js';
 import {paintFusionArt} from './fusion-art.js';
 import {renderZombieAccessories} from './zombie-art.js';
 import {finishPlantArt,plantContactShadow,paintZombieSurface,paintWorldAtmosphere} from './painterly.js';
-import {drawPlantSprite,drawZombieSprite} from './sprite-atlas.js';
+import {drawZombieSprite} from './sprite-atlas.js';
+import {drawPlantSprite,drawFusionSpriteParts} from './plant-sprites.js';
 const TAU=Math.PI*2;
 function box(c,x,y,w,h,r=10,fill='#ffffff',stroke=null,lineWidth=1){
  c.beginPath();c.roundRect(x,y,w,h,r);c.fillStyle=fill;c.fill();
@@ -232,7 +233,7 @@ function paintPlant(c,p,x,y,scale=1,time=0){
  else if(icon==='potato-chomper'){circle(c,-13,-65+bob,15,'#8a5ca4');}
  highlightPlant(c,icon,bob);
  if(p.stacks>1)text(c,'×'+p.stacks,28,-16,22,'#fbf4b4','900','center');
- if(p.parts?.length>1)paintFusionArt(c,p,time);
+ if(p.parts?.length>1&&!drawFusionSpriteParts(c,p,time))paintFusionArt(c,p,time);
  finishPlantArt(c,{...p,...(getPlantForArt(p)||{})},time);
  c.restore();
 }
