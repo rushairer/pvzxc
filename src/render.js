@@ -4,6 +4,7 @@ import {drawClassicPlant} from './classic-art.js';
 import {paintFusionArt} from './fusion-art.js';
 import {renderZombieAccessories} from './zombie-art.js';
 import {finishPlantArt,plantContactShadow,paintZombieSurface,paintWorldAtmosphere} from './painterly.js';
+import {drawPlantSprite,drawZombieSprite} from './sprite-atlas.js';
 const TAU=Math.PI*2;
 function box(c,x,y,w,h,r=10,fill='#ffffff',stroke=null,lineWidth=1){
  c.beginPath();c.roundRect(x,y,w,h,r);c.fillStyle=fill;c.fill();
@@ -170,7 +171,9 @@ function paintPlant(c,p,x,y,scale=1,time=0){
  const isSun=icon==='sun'||icon==='twin'||icon==='pea-sun'||icon==='sun-cherry'||icon==='sun-wall'||icon==='sun-potato'||icon==='sun-chomper';
  const isChomper=icon.includes('chomper');
  const isCherry=icon.includes('cherry')&&!isChomper;
- if(drawClassicPlant(c,p.id,bob,p.age||time)||drawClassicPlant(c,icon,bob,p.age||time)){
+ if(drawPlantSprite(c,p,time)){
+  // Transparent character illustration replaces the base form when loaded.
+ }else if(drawClassicPlant(c,p.id,bob,p.age||time)||drawClassicPlant(c,icon,bob,p.age||time)){
   // Fully distinct portraits for classic seed types.
  }else if(drawThirdWavePlant(c,icon,bob,p.age||time)){
   // Third-wave plants have individual procedural high-resolution artwork.
@@ -235,6 +238,8 @@ function paintPlant(c,p,x,y,scale=1,time=0){
 }
 function paintZombie(c,z,t){
  c.save();c.translate(z.x,z.y);let step=Math.sin(t*5+z.anim)*6;
+ const hasIllustration=drawZombieSprite(c,z,t);
+ if(!hasIllustration){
  oval(c,0,7,32,9,'#30492aa3');
  line(c,[[-11,-31],[-14+step,0]],'#464955',14);
  line(c,[[14,-31],[12-step,0]],'#464955',14);
@@ -268,6 +273,7 @@ function paintZombie(c,z,t){
   oval(c,-1,-270,12,17,'#ffd7e6aa');
   circle(c,8,-224,5,'#d974a9');
  }
+ }
  if(z.charmed){
   oval(c,0,-117,39,46,'#e7a8fe48');
   circle(c,-12,-140,3,'#fa96ef');circle(c,12,-140,3,'#fa96ef');
@@ -290,7 +296,7 @@ function paintZombie(c,z,t){
  if(z.burn>0){
   for(let k=0;k<4;k++)oval(c,(k-1.5)*17,-95-k%2*19,7,17,k%2?'#ffc64a99':'#f3823688');
  }
- renderZombieAccessories(c,z,t);
+ if(!hasIllustration)renderZombieAccessories(c,z,t);
  paintZombieSurface(c,z,t);
  if(z.hp<z.maxHp){box(c,-29,-212,58,7,3,'#3a2b2a');box(c,-28,-211,56*Math.max(0,z.hp/z.maxHp),5,2,'#9bce5b');}
  c.restore();
