@@ -12,8 +12,8 @@ test('49 basic plants all have distinct raster atlas tiles',()=>{
  assert.equal(new Set(PLANT_ATLAS_IDS.map(id=>plantTileRect(id).join(','))).size,49);
  for(const item of SEEDS)assert.equal(resolvePlantSpriteId(item),item.id,item.name);
 });
-test('all 349 fusions resolve their source materials into atlas art',()=>{
- assert.equal(RECIPES.length,349);
+test('all 373 fusions resolve their source materials into atlas art',()=>{
+ assert.equal(RECIPES.length,373);
  for(const spec of RECIPES){
   const roots=resolvePlantRoots(spec);
   assert.ok(roots.length>=2,'no fusion material for '+spec.id);
