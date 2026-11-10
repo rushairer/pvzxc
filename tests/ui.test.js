@@ -34,12 +34,12 @@ test('the real browser entrypoint supports endless start, save, load and catalog
   const el=id=>elements.get(id);
   assert.equal(el('primaryAction').textContent,'▶ 新建无尽战场');
   assert.equal(el('freeAction').disabled,true);
-  assert.equal(el('recipeGrid').children.length,349);
+  assert.equal(el('recipeGrid').children.length,373);
   el('primaryAction').fire('click');
   assert.equal(el('deckOverlay').classList.contains('is-visible'),true);
   assert.equal(el('deckSelected').children.length,10);
   assert.equal(el('deckConfirm').disabled,true);
-  assert.equal(el('deckLibrary').children.length,398);
+  assert.equal(el('deckLibrary').children.length,422);
   // Picking or removing a card must preserve the same scrollable list and DOM nodes.
   const library=el('deckLibrary');
   library.scrollTop=1180;
