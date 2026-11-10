@@ -6,6 +6,7 @@ import {renderZombieAccessories} from './zombie-art.js';
 import {finishPlantArt,plantContactShadow,paintZombieSurface,paintWorldAtmosphere} from './painterly.js';
 import {drawZombieSprite} from './sprite-atlas.js';
 import {drawPlantSprite,drawFusionSpriteParts} from './plant-sprites.js';
+import {drawFusionPlantSprite} from './fusion-sprites.js';
 const TAU=Math.PI*2;
 function box(c,x,y,w,h,r=10,fill='#ffffff',stroke=null,lineWidth=1){
  c.beginPath();c.roundRect(x,y,w,h,r);c.fillStyle=fill;c.fill();
@@ -172,7 +173,10 @@ function paintPlant(c,p,x,y,scale=1,time=0){
  const isSun=icon==='sun'||icon==='twin'||icon==='pea-sun'||icon==='sun-cherry'||icon==='sun-wall'||icon==='sun-potato'||icon==='sun-chomper';
  const isChomper=icon.includes('chomper');
  const isCherry=icon.includes('cherry')&&!isChomper;
- if(drawPlantSprite(c,p,time)){
+ const dedicated=drawFusionPlantSprite(c,p,time);
+ if(dedicated){
+  // A named high-tier fusion uses its own transparent illustration.
+ }else if(drawPlantSprite(c,p,time)){
   // Transparent character illustration replaces the base form when loaded.
  }else if(drawClassicPlant(c,p.id,bob,p.age||time)||drawClassicPlant(c,icon,bob,p.age||time)){
   // Fully distinct portraits for classic seed types.
@@ -216,6 +220,7 @@ function paintPlant(c,p,x,y,scale=1,time=0){
    peaHead(c,icon.includes('ice')?'ice':icon.includes('blaze')||icon==='cherry-pea'||icon==='super-cherry'?'fire':'pea',bob);
   }
  }
+ if(!dedicated){
  if(icon==='sun-cherry'){circle(c,24,-80+bob,18,'#df4142');sunflower(c,-9,-68+bob,true);}
  else if(icon==='pea-sun'){sunflower(c,-27,-88+bob,true,true);}
  else if(icon==='sun-wall'){sunflower(c,0,-76+bob,true);}
@@ -232,8 +237,9 @@ function paintPlant(c,p,x,y,scale=1,time=0){
  else if(icon==='wall-chomper'){circle(c,18,-78+bob,12,'#865baa');}
  else if(icon==='potato-chomper'){circle(c,-13,-65+bob,15,'#8a5ca4');}
  highlightPlant(c,icon,bob);
+ }
  if(p.stacks>1)text(c,'×'+p.stacks,28,-16,22,'#fbf4b4','900','center');
- if(p.parts?.length>1&&!drawFusionSpriteParts(c,p,time))paintFusionArt(c,p,time);
+ if(p.parts?.length>1&&!dedicated&&!drawFusionSpriteParts(c,p,time))paintFusionArt(c,p,time);
  finishPlantArt(c,{...p,...(getPlantForArt(p)||{})},time);
  c.restore();
 }
