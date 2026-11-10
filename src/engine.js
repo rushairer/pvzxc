@@ -232,6 +232,18 @@ function updatePlant(s,p,r,c,dt){
  if(!spec)return;
  p.age+=dt;
  p.boostLeft=Math.max(0,(p.boostLeft||0)-dt);
+ if(spec.summonAlly){
+  p.summonTimer-=dt;
+  if(p.summonTimer<=0){
+   const type=spec.summonAlly.type||'normal';
+   const start=Math.min(BOARD.x+BOARD.w-10,x+BOARD.cw*1.6);
+   spawn(s,r,type,start);
+   const ally=s.zombies[s.zombies.length-1];
+   ally.charmed=true;ally.biting=0;ally.frozen=0;
+   particles(s,x,y-60,'#caa0f6',18);
+   p.summonTimer+=spec.summonAlly.interval;
+  }
+ }
  // Passive element traits remain functional even on defense-only fusions.
  if(spec.freezeAura||spec.burnAura||spec.poisonAura){
   p.auraTimer=(p.auraTimer??0)-dt;
