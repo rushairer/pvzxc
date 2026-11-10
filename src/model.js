@@ -6,6 +6,7 @@ import { FUSIONS_V6 } from './fusions6.js';
 import { FUSIONS_V7 } from './fusions7.js';
 import { FUSIONS_ULTIMATE } from './fusions-ultimate.js';
 import { FUSIONS_V8 } from './fusions8.js';
+import { FUSIONS_V9 } from './fusions9.js';
 // Base/day plants and additional seasonal plants are separated for maintainability.
 // Design references: docs/REFERENCE.md. Further exotic classes deliberately omitted.
 export const SEEDS = Object.freeze([
@@ -54,7 +55,8 @@ export const RECIPES = Object.freeze([
   ...FUSIONS_V6,
   ...FUSIONS_V7,
   ...FUSIONS_ULTIMATE,
-  ...FUSIONS_V8
+  ...FUSIONS_V8,
+  ...FUSIONS_V9
 ]);
 export function fusionKey(a,b){return [a,b].sort().join('+');}
 const recipes=new Map(RECIPES.filter(recipe=>!recipe.ordered).map(recipe=>[fusionKey(...recipe.inputs),recipe]));
