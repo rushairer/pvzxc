@@ -81,6 +81,7 @@ export function createPlant(source,parts){
     instantTimer:spec.instant?.delay??Infinity,stacks:1,squashWindup:0,
     cover:0,magnetTimer:2,coinTimer:spec.coinProduction?6:Infinity,miniTimer:2,
     cannonTimer:spec.cannon?4:Infinity,gloomTimer:0,boostLeft:0,platform:spec.platform||null,
+    summonTimer:spec.summonAlly?spec.summonAlly.interval:Infinity,
     armedAt:spec.mine?.arm||0,digestTimer:0,shotsHit:0,crackPhase:0};
 }
 export function unlockedSeeds(){return SEEDS;}
