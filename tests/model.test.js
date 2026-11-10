@@ -32,8 +32,8 @@ test('all 26 classic zombie categories are registered',()=>{
   assert.ok(s.zombies[0].hp>0);
  }
 });
-test('349 distinct fusion recipes have resolvable ingredients and products',()=>{
- assert.equal(RECIPES.length,349);
+test('373 distinct fusion recipes have resolvable ingredients and products',()=>{
+ assert.equal(RECIPES.length,373);
  const ids=new Set(SEEDS.map(s=>s.id)),recipeIds=RECIPES.map(r=>r.id);
  assert.equal(new Set(recipeIds).size,recipeIds.length);
  assert.equal(recipeIds.filter(x=>ids.has(x)).length,0);
@@ -159,7 +159,7 @@ test('corrupt or incompatible snapshots reject cleanly',()=>{
  assert.throws(()=>loadGame('slot1',storage),/读取失败/);
  assert.throws(()=>restoreSnapshot({version:SAVE_VERSION+1,state:{}}),/不受支持/);
 });
-test('render all 49 base plants and 349 fusion species without exceptions',()=>{
+test('render all 49 base plants and 373 fusion species without exceptions',()=>{
  const all=[...SEEDS,...RECIPES],ctx=mockCtx();
  for(let i=0;i<all.length;i+=45){
   const s=newGame();for(let n=0;n<45&&i+n<all.length;n++){
@@ -174,7 +174,7 @@ test('render all 26 enemy visual classes without exceptions',()=>{
  assert.doesNotThrow(()=>drawScene(ctx,s,renderOptions));
 });
 
-test('all 349 recipes can be selected into a new ten-card deck',()=>{
+test('all 373 recipes can be selected into a new ten-card deck',()=>{
  for(const recipe of RECIPES){
   const s=generous(recipe.id);s.selected=recipe.id;
   assert.equal(plantHere(s,2,2,recipe.id),true,recipe.id);
