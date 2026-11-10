@@ -8,6 +8,7 @@ import {drawZombieSprite} from './sprite-atlas.js';
 import {drawPlantSprite,drawFusionSpriteParts} from './plant-sprites.js';
 import {drawFusionPlantSprite} from './fusion-sprites.js';
 import {drawFusionV8Sprite} from './fusion-sprites8.js';
+import {drawFusionV9Sprite} from './fusion-sprites9.js';
 const TAU=Math.PI*2;
 function box(c,x,y,w,h,r=10,fill='#ffffff',stroke=null,lineWidth=1){
  c.beginPath();c.roundRect(x,y,w,h,r);c.fillStyle=fill;c.fill();
@@ -174,7 +175,7 @@ function paintPlant(c,p,x,y,scale=1,time=0){
  const isSun=icon==='sun'||icon==='twin'||icon==='pea-sun'||icon==='sun-cherry'||icon==='sun-wall'||icon==='sun-potato'||icon==='sun-chomper';
  const isChomper=icon.includes('chomper');
  const isCherry=icon.includes('cherry')&&!isChomper;
- const dedicated=drawFusionV8Sprite(c,p,time)||drawFusionPlantSprite(c,p,time);
+ const dedicated=drawFusionV9Sprite(c,p,time)||drawFusionV8Sprite(c,p,time)||drawFusionPlantSprite(c,p,time);
  if(dedicated){
   // A named high-tier fusion uses its own transparent illustration.
  }else if(drawPlantSprite(c,p,time)){
