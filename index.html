@@ -12,7 +12,7 @@
  <div class="app-shell">
   <header class="site-head">
    <a class="wordmark" href="./"><span class="mark-icon">✿</span><span>融合花园 <em>ENDLESS FUSION</em></span></a>
-   <div class="header-right"><span class="version">WEB · ALPHA 0.8</span><button class="plain-button" id="headerHelp" type="button">图鉴与说明 <span aria-hidden="true">?</span></button></div>
+   <div class="header-right"><span class="version">WEB · ALPHA 1.0</span><button class="plain-button" id="headerHelp" type="button">图鉴与说明 <span aria-hidden="true">?</span></button></div>
   </header>
   <main>
    <div class="game-frame">
@@ -22,7 +22,7 @@
       <div class="menu-kicker">UNLIMITED WAVES · FUSION DEFENSE</div>
       <div class="menu-flower" aria-hidden="true">✿</div>
       <h1 id="overlayTitle">融合无尽</h1>
-      <p id="overlayDescription">49种基础植物、253条融合配方；每个存档挑选10张植物，5列2行卡槽，持续挑战无尽尸潮。</p>
+      <p id="overlayDescription">49种基础植物、325条融合配方；每个存档挑选10张植物，5列2行卡槽，持续挑战无尽尸潮。</p>
       <div class="menu-actions">
        <button class="action-button primary" id="primaryAction" type="button">▶ 新建无尽战场</button>
        <button class="action-button secondary free-play" id="freeAction" type="button">↻ 继续自动存档</button>
@@ -35,7 +35,7 @@
     <div class="overlay deck-overlay" id="deckOverlay" role="dialog" aria-modal="true" aria-labelledby="deckTitle" aria-hidden="true">
      <div class="deck-card">
       <header class="guide-head"><div><span class="menu-kicker">PICK YOUR PLANTS</span><h2 id="deckTitle">为本次无尽存档选择10张植物</h2></div><button class="close-button" id="closeDeck" type="button" aria-label="取消选卡">×</button></header>
-      <p class="deck-hint">所有49种基础植物与253种融合植物都可在开局选择。每局携带10张植物，所有已编码配方也可通过对应材料在战场融合。</p>
+      <p class="deck-hint">所有49种基础植物与325种融合植物都可在开局选择。每局携带10张植物，所有已编码配方也可通过对应材料在战场融合。</p>
       <div class="deck-selected" id="deckSelected" aria-live="polite"></div>
       <div class="deck-controls">
        <input id="deckSearch" type="search" placeholder="搜索植物名称、效果或融合配方" autocomplete="off" aria-label="搜索待选植物">
@@ -55,7 +55,7 @@
       <div class="recipe-searchbar">
        <label for="recipeSearch">搜索</label>
        <input id="recipeSearch" type="search" placeholder="搜索植物名称、融合名字或特性" autocomplete="off">
-       <span id="recipeCount" aria-live="polite">253 条</span>
+       <span id="recipeCount" aria-live="polite">325 条</span>
       </div>
       <div class="recipe-grid" id="recipeGrid"></div>
       <div class="guide-foot">全部原版基础植物和僵尸类型均已列入可玩名录，但部分原作特殊机制、画面、碰撞与数值仍是近似，不宣称原版1:1完成。</div>
@@ -75,7 +75,7 @@
     <div class="rotate-tip">横屏游戏体验更好</div>
    </div>
    <div class="below-game">
-    <div class="play-instruction"><strong>无尽模式</strong>：开局选10张植物（5列×2行）；所有253条融合配方可选。手套可以搬运植物和僵尸。</div>
+    <div class="play-instruction"><strong>无尽模式</strong>：开局选10张植物（5列×2行）；所有325条融合配方可选。手套可以搬运植物和僵尸。</div>
     <div class="game-tools">
      <button type="button" id="quickSave" class="tool-button">保存游戏</button>
      <button type="button" id="quickLoad" class="tool-button">读取存档</button>
