@@ -80,7 +80,7 @@ export function createPlant(source,parts){
   const spec=typeof source==='string'?getPlant(source):source;
   if(!spec)throw new TypeError('Unknown plant');
   return {id:spec.id,name:spec.name,icon:spec.icon,parts:parts||[spec.id],
-    hp:spec.hp,maxHp:spec.hp,age:0,fireTimer:.65,sunTimer:spec.sun?6:Infinity,
+    hp:spec.hp,maxHp:spec.hp,age:0,attackFx:0,hurtFx:0,fireTimer:.65,sunTimer:spec.sun?6:Infinity,
     fuseTimer:spec.explosion?.trigger==='fuse' ? 0.7 : Infinity,
     instantTimer:spec.instant?.delay??Infinity,stacks:1,squashWindup:0,
     cover:0,magnetTimer:2,coinTimer:spec.coinProduction?6:Infinity,miniTimer:2,
