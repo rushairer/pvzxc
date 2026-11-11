@@ -17,7 +17,7 @@ function chosen(...ids){
  return [...new Set([...ids,...DEFAULT_DECK])].slice(0,10);
 }
 test('Alpha 1.3 completes custom artwork coverage for all 24 Alpha 1.2 recipes',async()=>{
- assert.equal(RECIPES.length,373);
+ assert.equal(RECIPES.length,421);
  assert.equal(FUSIONS_V9.length,24);
  const old=await import('../src/fusion-sprites9.js');
  const extra=await import('../src/fusion-sprites10.js');

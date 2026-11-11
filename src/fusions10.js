@@ -1,7 +1,7 @@
 /**
- * Alpha 1.5: 48 PvZ Fusion Wiki-verified material formulas.
- * Formula names and ingredient pairs were cross-checked against the four
- * category pages below; all combat effects and balance are local approximations.
+ * Alpha 1.5: 48 experimental fusion recipes with classic plant themes.
+ * The reference pages inspired family themes; individual names and pairs are
+ * NOT verified as official BluePiaoPiaoFly game recipes. All balance is approximate.
  * These are original procedural art combinations, NOT copied official sprites.
  */
 const SOURCES={
@@ -114,7 +114,7 @@ function makeRecipe([id,name,a,b,style,family]){
  const stats=TRAITS[style];
  if(!stats)throw new Error('Unknown recipe style: '+style);
  return {id,name,inputs:[a,b],icon:family==='ice'?'ice-shroom':family==='three'?'threepeater':family==='squash'?'squash':'fume',
-  hp:300,cooldown:14,approximate:true,source:'wiki-formula',sourceUrl:SOURCES[family],
-  desc:'融合配方按融合版图鉴核对；攻击、冷却及特殊效果为本项目近似实现。',...stats};
+  hp:300,cooldown:14,approximate:true,source:'experimental',sourceUrl:SOURCES[family],
+  desc:'原创实验融合：配方组合与数值为本项目实现，非原版核实数据。',...stats};
 }
 export const FUSIONS_V10=Object.freeze(ROWS.map(makeRecipe));

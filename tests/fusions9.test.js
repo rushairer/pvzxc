@@ -9,7 +9,7 @@ import {makeSnapshot,restoreSnapshot} from '../src/save.js';
 
 test('24 new high-tier recipes exist, have unique formulas and are playable',()=>{
  assert.equal(FUSIONS_V9.length,24);
- assert.equal(RECIPES.length,373);
+ assert.equal(RECIPES.length,421);
  const ids=new Set(),pairs=new Set();
  for(const recipe of FUSIONS_V9){
   assert.ok(!ids.has(recipe.id));ids.add(recipe.id);

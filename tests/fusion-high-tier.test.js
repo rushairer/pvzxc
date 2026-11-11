@@ -21,7 +21,7 @@ function gameWith(...ids){
 test('all 72 newly added recipes are registered and have unambiguous formulas',()=>{
  assert.equal(FUSIONS_V7.length,60);
  assert.equal(FUSIONS_ULTIMATE.length,12);
- assert.equal(RECIPES.length,373);
+ assert.equal(RECIPES.length,421);
  const all=[...FUSIONS_V7,...FUSIONS_ULTIMATE];
  const unique=new Set(all.map(x=>fusionKey(...x.inputs)));
  assert.equal(unique.size,72);

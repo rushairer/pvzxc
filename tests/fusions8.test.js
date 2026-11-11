@@ -7,9 +7,9 @@ import {newGame,plantHere,tick} from '../src/engine.js';
 import {makeSnapshot,restoreSnapshot} from '../src/save.js';
 import {DEFAULT_DECK} from '../src/deck.js';
 
-test('24 Alpha 1.1 recipes are playable, unique and present in the 373 catalog',()=>{
+test('24 Alpha 1.1 recipes are playable, unique and present in the 421 catalog',()=>{
  assert.equal(FUSIONS_V8.length,24);
- assert.equal(RECIPES.length,373);
+ assert.equal(RECIPES.length,421);
  const keys=new Set(),ids=new Set();
  for(const r of FUSIONS_V8){
   const k=fusionKey(...r.inputs);
