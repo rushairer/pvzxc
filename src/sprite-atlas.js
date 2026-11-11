@@ -94,10 +94,10 @@ export function drawZombieSprite(c,z,t=0){
  if(zombieReady&&tile&&typeof c.drawImage==='function'){
   const [width,height]=zombieSizes[type];
   c.save();
-  c.translate(Math.sin(t*5+(z.anim||0))*1.5,0);
+  c.translate(z.frozen>0||z.butter>0?0:Math.sin((z.anim||0)*5.2)*.45,0);
   // Diggers reverse direction after surfacing on the defender's side.
   if(z.returning&&typeof c.scale==='function')c.scale(-1,1);
-  const bounce=Math.sin(t*3.2+(z.anim||0))*.8;
+  const bounce=z.frozen>0||z.butter>0?0:Math.sin((z.anim||0)*3.2)*.35;
   c.drawImage(zombieAtlasImage,...tile,-width/2,-height+bounce,width,height);
   c.restore();
   return true;
