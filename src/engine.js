@@ -3,6 +3,7 @@ import {deckFromIds,DEFAULT_DECK} from './deck.js';
 export const BOARD={x:184,y:188,w:1053,h:540,rows:5,cols:9,cw:117,ch:108};
 import {CLASSIC_ZOMBIES} from './classic.js';
 import {applySpecialZombie,pickEndlessEnemy} from './zombie-special.js';
+import {ZOMBIE_DEATH_DURATION} from './animation.js';
 export const ENDLESS={name:'融合无尽',initialSun:500,waveDuration:34,initialSpawn:9,minimumSpawn:1.25};
 export const ZOMBIE_TYPES=CLASSIC_ZOMBIES;
 export const ZOMBIE_IDS=Object.freeze(Object.keys(CLASSIC_ZOMBIES));
@@ -11,7 +12,7 @@ function rnd(a,b){return a+Math.random()*(b-a);}
 export function newGame(deckIds=DEFAULT_DECK){
  const chosen=deckFromIds(deckIds);
  return {mode:'endless',phase:'playing',paused:false,t:0,sun:ENDLESS.initialSun,
-  grid:Array.from({length:5},()=>Array(9).fill(null)),zombies:[],bullets:[],suns:[],effects:[],
+  grid:Array.from({length:5},()=>Array(9).fill(null)),zombies:[],deadZombies:[],bullets:[],suns:[],effects:[],
   mowers:Array(5).fill(true),craters:[],coins:0,screenFlash:0,windLeft:0,
   decks:chosen,cooldowns:{},selected:null,shovel:false,hover:null,page:0,lastPlanted:null,quickRecipe:null,graves:[],
   tool:'seed',gloveMode:'plant',gloveCooldown:{plant:0,zombie:0},glovePickup:null,
@@ -168,7 +169,7 @@ export function spawn(s,row,type='normal',x=1418){
  s.zombies.push({id:s.uid++,row:actualRow,x,y:BOARD.y+(actualRow+.55)*BOARD.ch,type,
   hp:spec.hp,maxHp:spec.hp,speed:spec.speed,baseSpeed:spec.speed,
   airborne:!!spec.airborne,charmed:false,armor:spec.armor||0,attack:spec.attack,period:spec.period,
-  biting:0,slow:0,burn:0,dead:false,anim:rnd(0,6),specialTimer:spec.bungee?.5:spec.summon?4:spec.catapult?2.6:3,
+  biting:0,slow:0,burn:0,dead:false,anim:rnd(0,6),eating:false,hitFx:0,biteFx:0,specialTimer:spec.bungee?.5:spec.summon?4:spec.catapult?2.6:3,
   jumped:false,returning:false,thrown:false,summoned:0,iceDamage:0,shield:!!spec.shield});
 }
 function rowFire(s,row,damage){
@@ -482,7 +483,7 @@ function advanceProjectiles(s,dt){
    const hit=b.star||b.homing?Math.hypot(z.x-b.x,(z.y-38)-b.y)<35
     :Math.abs(z.x-b.x)<22&&Math.abs(z.y-b.y)<58;
    if(!hit)continue;
-   b.hit.add(z.id);z.hp-=b.damage;
+   b.hit.add(z.id);z.hp-=b.damage;z.hitFx=.26;
    if(z.armor>0)z.armor=Math.max(0,z.armor-b.damage);
    if(b.charmChance&&Math.random()<b.charmChance)charmZombie(s,z);
    if(b.butterChance&&Math.random()<b.butterChance){z.hp-=b.butterDamage;z.frozen=Math.max(z.frozen||0,b.butterStun);z.butter=Math.max(z.butter||0,b.butterStun);particles(s,z.x,z.y-100,'#ffe883',12);}
@@ -499,10 +500,16 @@ function advanceProjectiles(s,dt){
 }
 function advanceZombies(s,dt){
  for(const z of s.zombies){
+  z.hitFx=Math.max(0,(z.hitFx||0)-dt);
+  z.biteFx=Math.max(0,(z.biteFx||0)-dt);
+  z.eating=false;
   if(z.hp<=0)continue;
+  // Advance phase before special-zombie hooks: diggers, pogo jumpers and
+  // bungees otherwise skipped gait and status animation indefinitely.
+  if(!(z.frozen>0||z.butter>0))z.anim+=dt*(z.slow>0?.55:1);
   if(applySpecialZombie(s,z,dt,{BOARD,spawn,getPlant,particles}))continue;
   if(z.fleeing&&z.x>1520){z.hp=0;continue;}
-  z.anim+=dt;z.slow=Math.max(0,z.slow-dt);z.frozen=Math.max(0,(z.frozen||0)-dt);
+  z.slow=Math.max(0,z.slow-dt);z.frozen=Math.max(0,(z.frozen||0)-dt);
   z.butter=Math.max(0,(z.butter||0)-dt);
   if(z.burn>0){z.hp-=7*dt;z.burn=Math.max(0,z.burn-dt);}
   if(z.poison>0){z.hp-=6*dt;z.poison=Math.max(0,z.poison-dt);}
@@ -511,7 +518,7 @@ function advanceZombies(s,dt){
    const enemy=s.zombies.find(other=>!other.charmed&&other.hp>0&&other.row===z.row&&Math.abs(other.x-z.x)<44);
    if(enemy){
     z.biting-=dt;
-    if(z.biting<=0){enemy.hp-=z.attack;z.biting=z.period;}
+    if(z.biting<=0){enemy.hp-=z.attack;enemy.hitFx=.26;z.biteFx=.3;z.biting=z.period;}
    }else z.x+=z.speed*dt;
    if(z.x>BOARD.x+BOARD.w+170)z.hp=0;
    continue;
@@ -521,11 +528,11 @@ function advanceZombies(s,dt){
   const px=BOARD.x+(c+.5)*BOARD.cw;
   if(z.frozen>0)continue;
   if(plant&&!getPlant(plant.id)?.low&&!z.airborne&&Math.abs(z.x-px)<49){
-   z.biting-=dt;
+   z.eating=true;z.biting-=dt;
    if(z.biting<=0){
     const spec=getPlant(plant.id);
     const hit=spec.garlic?Math.min(15,z.attack):z.attack;
-    plant.hurtFx=.26;
+    plant.hurtFx=.26;z.biteFx=.3;
     if(plant.cover>0){
      plant.cover=Math.max(0,plant.cover-hit);
      particles(s,px,z.y-45,'#ffac5d',4);
@@ -555,8 +562,15 @@ function advanceZombies(s,dt){
  }
  const alive=[];
  for(const z of s.zombies){
-  if(z.hp<=0){s.kills++;particles(s,z.x,z.y-35,'#889f7b',8);}
-  else alive.push(z);
+  if(z.hp<=0){
+   s.kills++;
+   particles(s,z.x,z.y-35,'#889f7b',8);
+   // Only keep a detached visual copy: dead zombies must never block hits,
+   // attack plants, consume save data, or count twice as kills.
+   s.deadZombies??=[];
+   s.deadZombies.push({...z,hp:0,deathElapsed:0,hitFx:0,biteFx:0,eating:false});
+   if(s.deadZombies.length>90)s.deadZombies.splice(0,s.deadZombies.length-90);
+  }else alive.push(z);
  }
  s.zombies=alive;
 }
@@ -576,6 +590,9 @@ function spawnWave(s){
 export function tick(s,dt){
  if(!s||s.phase!=='playing'||s.paused)return;
  dt=Math.min(.05,Math.max(0,dt));s.t+=dt;s.messageLeft=Math.max(0,s.messageLeft-dt);
+ s.deadZombies??=[];
+ for(const z of s.deadZombies)z.deathElapsed+=dt;
+ s.deadZombies=s.deadZombies.filter(z=>z.deathElapsed<ZOMBIE_DEATH_DURATION);
  s.shake=Math.max(0,s.shake-dt*27);
  s.screenFlash=Math.max(0,s.screenFlash-dt*2.2);
  s.windLeft=Math.max(0,s.windLeft-dt);
