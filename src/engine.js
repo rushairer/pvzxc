@@ -58,7 +58,7 @@ export function plantHere(s,row,col,id){
   particles(s,center(row,col).x,center(row,col).y,'#bca17c',24);return true;
  }
  const fusion=cur?recipeFor(cur.id,item.id):null;
- if(item.id==='pumpkin'&&cur){
+ if(item.id==='pumpkin'&&cur&&!fusion){
    const max=4000;
    if(cur.cover>=max){message(s,'南瓜护甲已经完好');return false;}
    cur.cover=max;s.sun-=price;s.cooldowns[id]=selected.cooldown??14;s.lastPlanted=id;
@@ -231,6 +231,8 @@ function updatePlant(s,p,r,c,dt){
  const spec=getPlant(p.id),{x,y}=center(r,c);
  if(!spec)return;
  p.age+=dt;
+ p.attackFx=Math.max(0,(p.attackFx||0)-dt);
+ p.hurtFx=Math.max(0,(p.hurtFx||0)-dt);
  p.boostLeft=Math.max(0,(p.boostLeft||0)-dt);
  if(spec.summonAlly){
   p.summonTimer-=dt;
@@ -296,7 +298,7 @@ function updatePlant(s,p,r,c,dt){
     if(spec.burnAura)z.burn=Math.max(z.burn,spec.burnAura);
     if(spec.poisonAura)z.poison=Math.max(z.poison,spec.poisonAura);
    }
-   p.gloomTimer=spec.gloom.interval;particles(s,x,y-40,'#bba1e9',16);
+   p.gloomTimer=spec.gloom.interval;p.attackFx=.24;particles(s,x,y-40,'#bba1e9',16);
    }else p.gloomTimer=.15;
   }
  }
@@ -308,7 +310,7 @@ function updatePlant(s,p,r,c,dt){
     const victim=targets.reduce((best,z)=>s.zombies.filter(other=>other.hp>0&&Math.hypot(other.x-z.x,(other.row-z.row)*BOARD.ch)<spec.cannon.radius*BOARD.cw).length>
     s.zombies.filter(other=>other.hp>0&&Math.hypot(other.x-best.x,(other.row-best.row)*BOARD.ch)<spec.cannon.radius*BOARD.cw).length?z:best,targets[0]);
     boom(s,victim.x,victim.y,spec.cannon.damage,spec.cannon.radius);
-    p.cannonTimer=spec.cannon.interval;particles(s,victim.x,victim.y-40,'#ffd173',36);
+    p.cannonTimer=spec.cannon.interval;p.attackFx=.3;particles(s,victim.x,victim.y-40,'#ffd173',36);
    }else p.cannonTimer=.3;
   }
  }
@@ -425,7 +427,7 @@ function updatePlant(s,p,r,c,dt){
   p.digestTimer=Math.max(0,p.digestTimer-dt);
   if(p.digestTimer===0){
    const enemy=s.zombies.find(z=>zombieCanBeEaten(z)&&z.row===r&&z.x>=x-14&&z.x<x+spec.chomp.range*BOARD.cw);
-   if(enemy){enemy.hp=0;p.digestTimer=spec.chomp.digest;
+   if(enemy){enemy.hp=0;p.digestTimer=spec.chomp.digest;p.attackFx=.3;
     if(spec.sunOnChomp)addSun(s,x,y-40,spec.sunOnChomp);
     if(spec.onChompExplosion)boom(s,enemy.x,enemy.y,spec.onChompExplosion.damage,spec.onChompExplosion.radius);
     particles(s,enemy.x,enemy.y-30,'#a6d95d',12);
@@ -446,6 +448,7 @@ function updatePlant(s,p,r,c,dt){
    if(!afraid&&target){
     if(spec.star)fireStars(s,p,spec,r,c);
     else shoot(s,p,spec,r,c);
+    p.attackFx=.24;
     p.fireTimer=(spec.interval||1.5)*(spec.accelerateNear?.7:1)*(p.boostLeft>0?.55:1);
    }else p.fireTimer=0;
   }
@@ -522,6 +525,7 @@ function advanceZombies(s,dt){
    if(z.biting<=0){
     const spec=getPlant(plant.id);
     const hit=spec.garlic?Math.min(15,z.attack):z.attack;
+    plant.hurtFx=.26;
     if(plant.cover>0){
      plant.cover=Math.max(0,plant.cover-hit);
      particles(s,px,z.y-45,'#ffac5d',4);
