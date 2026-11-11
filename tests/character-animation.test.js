@@ -105,3 +105,29 @@ test('zombie movement and transient effects restore from a saved battle',()=>{
  assert.ok(copy.hitFx<.26);
  assert.ok(copy.anim>1.25);
 });
+
+test('pausing a session freezes movement, bite, attack, and death pose clocks',()=>{
+ const s=newGame();quiet(s);s.sun=10000;
+ assert.ok(plantHere(s,2,2,'pea'));
+ spawn(s,2,'normal',1100);
+ const z=s.zombies[0],p=s.grid[2][2];
+ p.attackFx=.25;p.hurtFx=.2;
+ z.biteFx=.25;z.hitFx=.2;
+ s.deadZombies.push({...z,id:999,hp:0,deathElapsed:.2});
+ const before={t:s.t,age:p.age,attack:p.attackFx,hurt:p.hurtFx,anim:z.anim,
+  bite:z.biteFx,hit:z.hitFx,death:s.deadZombies[0].deathElapsed};
+ s.paused=true;
+ for(let i=0;i<12;i++)tick(s,.05);
+ assert.equal(s.t,before.t);
+ assert.equal(p.age,before.age);
+ assert.equal(p.attackFx,before.attack);
+ assert.equal(p.hurtFx,before.hurt);
+ assert.equal(z.anim,before.anim);
+ assert.equal(z.biteFx,before.bite);
+ assert.equal(z.hitFx,before.hit);
+ assert.equal(s.deadZombies[0].deathElapsed,before.death);
+ s.paused=false;tick(s,.05);
+ assert.ok(s.t>before.t);
+ assert.ok(p.age>before.age);
+ assert.ok(s.deadZombies[0].deathElapsed>before.death);
+});
