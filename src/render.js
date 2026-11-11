@@ -9,6 +9,7 @@ import {drawPlantSprite,drawFusionSpriteParts} from './plant-sprites.js';
 import {drawFusionPlantSprite} from './fusion-sprites.js';
 import {drawFusionV8Sprite} from './fusion-sprites8.js';
 import {drawFusionV9Sprite} from './fusion-sprites9.js';
+import {drawFusionV10Sprite} from './fusion-sprites10.js';
 const TAU=Math.PI*2;
 function box(c,x,y,w,h,r=10,fill='#ffffff',stroke=null,lineWidth=1){
  c.beginPath();c.roundRect(x,y,w,h,r);c.fillStyle=fill;c.fill();
@@ -167,7 +168,11 @@ function highlightPlant(c,icon,bob){
 function getPlantForArt(p){return p.spec||p;}
 function paintPlant(c,p,x,y,scale=1,time=0){
  const icon=p.icon||'pea';
- c.save();c.translate(x,y);c.scale(scale,scale);
+ c.save();
+ const attack=Math.max(0,p.attackFx||0),hurt=Math.max(0,p.hurtFx||0);
+ const recoil=attack*20,shiver=hurt*Math.sin(time*78)*21;
+ c.translate(x-recoil+shiver,y);
+ c.scale(scale*(1+attack*.18),scale*(1-attack*.13));
  const bob=Math.sin(time*2.4+x*.025)*2;
  oval(c,0,5,35,11,'#385c29bb');
  const low=p.low||icon.includes('spike')||icon==='puff'||icon==='potato';
@@ -175,7 +180,7 @@ function paintPlant(c,p,x,y,scale=1,time=0){
  const isSun=icon==='sun'||icon==='twin'||icon==='pea-sun'||icon==='sun-cherry'||icon==='sun-wall'||icon==='sun-potato'||icon==='sun-chomper';
  const isChomper=icon.includes('chomper');
  const isCherry=icon.includes('cherry')&&!isChomper;
- const dedicated=drawFusionV9Sprite(c,p,time)||drawFusionV8Sprite(c,p,time)||drawFusionPlantSprite(c,p,time);
+ const dedicated=drawFusionV10Sprite(c,p,time)||drawFusionV9Sprite(c,p,time)||drawFusionV8Sprite(c,p,time)||drawFusionPlantSprite(c,p,time);
  if(dedicated){
   // A named high-tier fusion uses its own transparent illustration.
  }else if(drawPlantSprite(c,p,time)){
@@ -243,6 +248,16 @@ function paintPlant(c,p,x,y,scale=1,time=0){
  if(p.stacks>1)text(c,'×'+p.stacks,28,-16,22,'#fbf4b4','900','center');
  if(p.parts?.length>1&&!dedicated&&!drawFusionSpriteParts(c,p,time))paintFusionArt(c,p,time);
  finishPlantArt(c,{...p,...(getPlantForArt(p)||{})},time);
+ if(hurt>0){
+  c.save();c.globalCompositeOperation='screen';
+  oval(c,0,-63,43,51,'rgba(255,137,108,'+Math.min(.46,hurt*1.7)+')');
+  c.restore();
+ }
+ if(attack>0){
+  c.save();c.globalCompositeOperation='screen';
+  oval(c,31,-71,9+attack*15,11+attack*15,'rgba(255,245,168,'+Math.min(.45,attack*1.55)+')');
+  c.restore();
+ }
  c.restore();
 }
 function paintZombie(c,z,t){
