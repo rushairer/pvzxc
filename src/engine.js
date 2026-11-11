@@ -517,6 +517,7 @@ function advanceZombies(s,dt){
   if(z.charmed){
    const enemy=s.zombies.find(other=>!other.charmed&&other.hp>0&&other.row===z.row&&Math.abs(other.x-z.x)<44);
    if(enemy){
+    z.eating=true;
     z.biting-=dt;
     if(z.biting<=0){enemy.hp-=z.attack;enemy.hitFx=.26;z.biteFx=.3;z.biting=z.period;}
    }else z.x+=z.speed*dt;
