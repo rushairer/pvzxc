@@ -10,6 +10,7 @@ import {drawFusionPlantSprite} from './fusion-sprites.js';
 import {drawFusionV8Sprite} from './fusion-sprites8.js';
 import {drawFusionV9Sprite} from './fusion-sprites9.js';
 import {drawFusionV10Sprite} from './fusion-sprites10.js';
+import {plantPose,zombiePose} from './animation.js';
 const TAU=Math.PI*2;
 function box(c,x,y,w,h,r=10,fill='#ffffff',stroke=null,lineWidth=1){
  c.beginPath();c.roundRect(x,y,w,h,r);c.fillStyle=fill;c.fill();
@@ -169,10 +170,11 @@ function getPlantForArt(p){return p.spec||p;}
 function paintPlant(c,p,x,y,scale=1,time=0){
  const icon=p.icon||'pea';
  c.save();
- const attack=Math.max(0,p.attackFx||0),hurt=Math.max(0,p.hurtFx||0);
- const recoil=attack*20,shiver=hurt*Math.sin(time*78)*21;
- c.translate(x-recoil+shiver,y);
- c.scale(scale*(1+attack*.18),scale*(1-attack*.13));
+ const pose=plantPose(p,time);
+ const attack=pose.attack,hurt=pose.hurt;
+ c.translate(x+pose.x,y+pose.y);
+ c.rotate(pose.angle);
+ c.scale(scale*pose.scaleX,scale*pose.scaleY);
  const bob=Math.sin(time*2.4+x*.025)*2;
  oval(c,0,5,35,11,'#385c29bb');
  const low=p.low||icon.includes('spike')||icon==='puff'||icon==='potato';
@@ -261,7 +263,14 @@ function paintPlant(c,p,x,y,scale=1,time=0){
  c.restore();
 }
 function paintZombie(c,z,t){
- c.save();c.translate(z.x,z.y);let step=Math.sin(t*5+z.anim)*6;
+ const pose=zombiePose(z,t);
+ if(pose.opacity<=0)return;
+ c.save();
+ c.translate(z.x+pose.x,z.y+pose.y);
+ c.rotate(pose.angle);
+ c.scale(pose.scaleX,pose.scaleY);
+ c.globalAlpha*=pose.opacity;
+ const step=pose.walking?Math.sin((z.anim||0)*5.2)*6:0;
  const hasIllustration=drawZombieSprite(c,z,t);
  if(!hasIllustration){
  oval(c,0,7,32,9,'#30492aa3');
@@ -322,7 +331,20 @@ function paintZombie(c,z,t){
  }
  if(!hasIllustration)renderZombieAccessories(c,z,t);
  if(!hasIllustration)paintZombieSurface(c,z,t);
- if(z.hp<z.maxHp){box(c,-29,-212,58,7,3,'#3a2b2a');box(c,-28,-211,56*Math.max(0,z.hp/z.maxHp),5,2,'#9bce5b');}
+ if(pose.bite>0){
+  c.save();c.globalAlpha*=Math.min(.55,pose.bite*.9);
+  oval(c,-24,-102,27+pose.bite*12,22+pose.bite*9,'#f4d0a858');
+  c.restore();
+ }
+ if(pose.hit>0){
+  c.save();c.globalCompositeOperation='screen';
+  oval(c,0,-111,37,67,'rgba(255,172,137,'+Math.min(.58,pose.hit*.6)+')');
+  c.restore();
+ }
+ if(z.hp>0&&z.hp<z.maxHp){
+  box(c,-29,-212,58,7,3,'#3a2b2a');
+  box(c,-28,-211,56*Math.max(0,z.hp/z.maxHp),5,2,'#9bce5b');
+ }
  c.restore();
 }
 function paintSun(c,s){
@@ -531,6 +553,8 @@ export function drawScene(c,s,options){
     box(c,x-30,y+11,60*Math.max(0,p.hp/p.maxHp),4,2,'#b5db76');
    }
   }
+  // Non-interactive death sprites animate independently from living enemies.
+  for(const z of s.deadZombies||[])paintZombie(c,z,s.t);
   for(const z of [...s.zombies].sort((a,b)=>a.row-b.row))paintZombie(c,z,s.t);
   for(const p of s.bullets){
    let col=p.freezeHit?'#a5efff':p.butterChance?'#f9d477':p.icon.includes('ice')?'#a4eeff':p.icon.includes('blaze')||p.icon.includes('fire')?'#ff9d4e':p.icon.includes('cherry')?'#f39b54':p.icon.includes('sun')?'#f7d75a':p.icon.includes('nut')?'#b79d62':p.icon.includes('puff')||p.icon.includes('fume')?'#bb9dea':'#8bbf4c';
