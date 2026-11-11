@@ -11,6 +11,9 @@ import {drawFusionV8Sprite} from './fusion-sprites8.js';
 import {drawFusionV9Sprite} from './fusion-sprites9.js';
 import {drawFusionV10Sprite} from './fusion-sprites10.js';
 import {plantPose,zombiePose} from './animation.js';
+const prefersReducedMotion=typeof window!=='undefined'&&
+ typeof window.matchMedia==='function'&&
+ window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 const TAU=Math.PI*2;
 function box(c,x,y,w,h,r=10,fill='#ffffff',stroke=null,lineWidth=1){
  c.beginPath();c.roundRect(x,y,w,h,r);c.fillStyle=fill;c.fill();
@@ -170,7 +173,7 @@ function getPlantForArt(p){return p.spec||p;}
 function paintPlant(c,p,x,y,scale=1,time=0){
  const icon=p.icon||'pea';
  c.save();
- const pose=plantPose(p,time);
+ const pose=plantPose(p,time,prefersReducedMotion);
  const attack=pose.attack,hurt=pose.hurt;
  c.translate(x+pose.x,y+pose.y);
  c.rotate(pose.angle);
@@ -263,7 +266,7 @@ function paintPlant(c,p,x,y,scale=1,time=0){
  c.restore();
 }
 function paintZombie(c,z,t){
- const pose=zombiePose(z,t);
+ const pose=zombiePose(z,t,prefersReducedMotion);
  if(pose.opacity<=0)return;
  c.save();
  c.translate(z.x+pose.x,z.y+pose.y);
