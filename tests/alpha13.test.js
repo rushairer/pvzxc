@@ -99,3 +99,13 @@ test('zombie bites cause temporary hurt animation and preserve it across save',(
  for(let i=0;i<7;i++)tick(s,.05);
  assert.equal(p.hurtFx,0);
 });
+
+test('high-tier fusion shield durability above 4000 survives save/load',()=>{
+ const s=newGame(chosen('prism-armor'));
+ s.sun=10000000;
+ assert.equal(plantHere(s,1,1,'prism-armor'),true);
+ const before=s.grid[1][1].cover;
+ assert.equal(before,5200);
+ const restored=restoreSnapshot(makeSnapshot(s));
+ assert.equal(restored.grid[1][1].cover,5200);
+});
