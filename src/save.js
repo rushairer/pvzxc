@@ -20,7 +20,9 @@ function worldPlant(p){
   }else if(typeof base[key]==='string'&&typeof p[key]==='string')base[key]=p[key];
  }
  base.hp=number(p.hp,base.hp,1,base.maxHp);
- base.cover=number(p.cover,0,0,4000);
+ // Advanced fusion shields can exceed the classic pumpkin's 4000 HP.
+ // Retain the legitimate maximum while rejecting implausible/corrupt values.
+ base.cover=number(p.cover,0,0,Math.max(4000,getPlant(p.id)?.coverOnPlant||0));
  return base;
 }
 function worldZombie(z,index){
