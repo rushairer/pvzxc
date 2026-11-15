@@ -232,7 +232,7 @@ function point(ev){
  const rect=canvas.getBoundingClientRect();
  return {x:(ev.clientX-rect.left)*LOGICAL_WIDTH/rect.width,y:(ev.clientY-rect.top)*LOGICAL_HEIGHT/rect.height};
 }
-function canvasAction(x,y){
+function canvasAction(x,y,forceFusion=false){
  if(!game||scene!=='playing'||game.paused||guide.classList.contains('is-visible')||saveOverlay.classList.contains('is-visible')||deckOverlay.classList.contains('is-visible'))return;
  if(collectAt(game,x,y)){tone(740);return;}
  if(y>=10&&y<=155){
@@ -256,10 +256,10 @@ function canvasAction(x,y){
  if(col>=0&&col<9&&row>=0&&row<5){
   const before=game.grid[row][col];
   if(game.tool==='glove'){if(gloveAction(game,row,col))tone(760);return;}
-  if(plantHere(game,row,col,game.selected))tone(before?820:540);
+  if(plantHere(game,row,col,game.selected,{forceFusion}))tone(before?820:540);
  }
 }
-canvas.addEventListener('pointerdown',ev=>{ev.preventDefault();const p=point(ev);canvasAction(p.x,p.y);});
+canvas.addEventListener('pointerdown',ev=>{ev.preventDefault();const p=point(ev);canvasAction(p.x,p.y,ev.shiftKey===true);});
 canvas.addEventListener('pointermove',ev=>{if(game)game.hover=point(ev);});
 canvas.addEventListener('pointerleave',()=>{if(game)game.hover=null;});
 canvas.addEventListener('contextmenu',ev=>{ev.preventDefault();if(game)cancelTool(game);});

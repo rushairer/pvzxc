@@ -73,6 +73,67 @@ test('pumpkin armor can be planted on another plant and repaired',()=>{
  s.grid[2][2].cover=1200;s.cooldowns.pumpkin=0;
  assert.ok(plantHere(s,2,2,'pumpkin'));assert.equal(s.grid[2][2].cover,4000);
 });
+test('planting into an existing pumpkin keeps independent 4000 HP armor',()=>{
+ const s=generous('pumpkin','pea');
+ assert.equal(plantHere(s,2,2,'pumpkin'),true);
+ assert.equal(plantHere(s,2,2,'pea'),true);
+ const inner=s.grid[2][2];
+ assert.equal(inner.id,'pea');
+ assert.equal(inner.maxHp,300);
+ assert.equal(inner.hp,300);
+ assert.equal(inner.cover,4000);
+ assert.equal(inner.pumpkinShell,true);
+ assert.equal(s.solved.size,0);
+ s.spawnTimer=1e6;s.skyTimer=1e6;
+ spawn(s,2,'normal',BOARD.x+(2+.5)*BOARD.cw);
+ tick(s,.05);
+ assert.equal(inner.hp,300,'the zombie must not bite the inner plant through the shell');
+ assert.equal(inner.cover,3900,'the zombie damages the outer shell first');
+ const restored=restoreSnapshot(makeSnapshot(s));
+ assert.equal(restored.grid[2][2].id,'pea');
+ assert.equal(restored.grid[2][2].pumpkinShell,true);
+ assert.equal(restored.grid[2][2].cover,3900);
+});
+test('pumpkin first protects sunflowers by default; Shift still enables ordered pumpkin recipes',()=>{
+ const s=generous('pumpkin','sun');
+ assert.ok(plantHere(s,2,2,'pumpkin'));
+ assert.ok(plantHere(s,2,2,'sun'));
+ assert.equal(s.grid[2][2].id,'sun');
+ assert.equal(s.grid[2][2].cover,4000);
+ s.spawnTimer=1e6;s.skyTimer=1e6;
+ step(s,6.1);
+ assert.ok(s.suns.length>0,'the inner sunflower must keep generating sunshine');
+ const fused=generous('pumpkin','sun');
+ assert.ok(plantHere(fused,2,2,'pumpkin'));
+ assert.ok(plantHere(fused,2,2,'sun',{forceFusion:true}));
+ assert.equal(fused.grid[2][2].id,'solar-pumpkin');
+ assert.ok(fused.solved.has('solar-pumpkin'));
+});
+test('pumpkin shell stays after its inner plant is dug up or explodes',()=>{
+ const s=generous('pumpkin','pea','cherry');
+ assert.ok(plantHere(s,1,1,'pumpkin'));
+ assert.ok(plantHere(s,1,1,'pea'));
+ s.grid[1][1].cover=2700;
+ setTool(s,'shovel');
+ assert.ok(plantHere(s,1,1,null));
+ assert.equal(s.grid[1][1].id,'pumpkin');
+ assert.equal(s.grid[1][1].hp,2700);
+ assert.ok(plantHere(s,1,1,'cherry'));
+ s.spawnTimer=1e6;s.skyTimer=1e6;
+ step(s,1.1);
+ assert.equal(s.grid[1][1].id,'pumpkin');
+ assert.equal(s.grid[1][1].hp,2700);
+});
+test('existing plant fusion preserves a fitted pumpkin shell',()=>{
+ const s=generous('pumpkin','pea');
+ assert.ok(plantHere(s,2,2,'pumpkin'));
+ assert.ok(plantHere(s,2,2,'pea'));
+ s.cooldowns.pea=0;
+ assert.ok(plantHere(s,2,2,'pea'));
+ assert.equal(s.grid[2][2].id,'repeater');
+ assert.equal(s.grid[2][2].cover,4000);
+ assert.equal(s.grid[2][2].pumpkinShell,true);
+});
 test('imitater copies last planted plant but cannot copy an empty history',()=>{
  const s=generous('imitater','pea');
  assert.equal(plantHere(s,2,2,'imitater'),false);

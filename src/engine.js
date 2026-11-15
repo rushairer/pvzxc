@@ -28,14 +28,14 @@ export function particles(s,x,y,color='#fee48e',count=12){
  for(let i=0;i<count;i++){let a=rnd(0,Math.PI*2),speed=rnd(35,130);
  s.effects.push({x,y,vx:Math.cos(a)*speed,vy:Math.sin(a)*speed-30,life:rnd(.3,.8),color,size:rnd(2,6)});}
 }
-export function plantHere(s,row,col,id){
+export function plantHere(s,row,col,id,options={}){
  if(s.phase!=='playing'||s.paused)return false;
  if(row<0||row>4||col<0||col>8)return false;
  const cur=s.grid[row][col];
  if(s.craters.some(k=>k.row===row&&k.col===col&&k.life>0)){message(s,'弹坑尚未恢复，无法种植！');return false;}
  if(s.shovel){
    if(!cur)return false;
-   s.grid[row][col]=null;s.shovel=false;message(s,'植物已移除');return true;
+   leavePumpkinShell(s,row,col,cur);s.shovel=false;message(s,'植物已移除');return true;
  }
  const selected=getPlant(id);
  if(!selected||!s.decks.some(x=>x.id===id))return false;
@@ -59,10 +59,28 @@ export function plantHere(s,row,col,id){
   particles(s,center(row,col).x,center(row,col).y,'#bca17c',24);return true;
  }
  const fusion=cur?recipeFor(cur.id,item.id):null;
+ // The pumpkin is an outer shell unless Shift explicitly requests a fusion.
+ if(cur?.id==='pumpkin'&&!options.forceFusion){
+   if(item.id==='pumpkin'){
+     if(cur.hp>=cur.maxHp){message(s,'南瓜护甲已经完好');return false;}
+     cur.hp=cur.maxHp;
+     message(s,'南瓜护甲修补完成');
+   }else{
+     const inside=createPlant(item,item.inputs||[item.id]);
+     inside.cover=Math.max(cur.hp,item.coverOnPlant||0);
+     inside.pumpkinShell=true;
+     inside.platform=cur.platform||inside.platform;
+     s.grid[row][col]=inside;
+     message(s,'已将'+item.name+'种进南瓜');
+   }
+   s.sun-=price;s.cooldowns[id]=selected.cooldown??14;s.lastPlanted=id;
+   const {x,y}=center(row,col);particles(s,x,y-22,'#ffba6c',18);
+   return true;
+ }
  if(item.id==='pumpkin'&&cur&&!fusion){
    const max=4000;
    if(cur.cover>=max){message(s,'南瓜护甲已经完好');return false;}
-   cur.cover=max;s.sun-=price;s.cooldowns[id]=selected.cooldown??14;s.lastPlanted=id;
+   cur.cover=max;cur.pumpkinShell=true;s.sun-=price;s.cooldowns[id]=selected.cooldown??14;s.lastPlanted=id;
    const {x,y}=center(row,col);particles(s,x,y,'#ffba6c',18);
    message(s,'南瓜护甲装配完成');return true;
  }
@@ -71,17 +89,20 @@ export function plantHere(s,row,col,id){
  }
  if(cur&&!fusion&&cur.platform&&item.id!=='lilypad'&&item.id!=='flowerpot'){
    const newPlant=createPlant(item,[item.id]);
-   newPlant.platform=cur.platform;s.grid[row][col]=newPlant;
+   newPlant.platform=cur.platform;
+   if(cur.pumpkinShell){newPlant.pumpkinShell=true;newPlant.cover=Math.max(cur.cover,item.coverOnPlant||0);}
+   s.grid[row][col]=newPlant;
    s.sun-=price;s.cooldowns[id]=selected.cooldown??14;s.lastPlanted=id;return true;
  }
  if(cur&&!fusion){message(s,'这两种植物没有对应融合配方',3);return false;}
  const created=createPlant(fusion||item,cur?[...cur.parts,item.id]:(item.inputs||[item.id]));
+ if(cur?.pumpkinShell){created.pumpkinShell=true;created.cover=cur.cover;}
  if(fusion){
    // Fusion inherits the surviving existing plant's damage and planting age only where appropriate.
    s.solved.add(fusion.id);
    message(s,'融合成功：'+fusion.name,3);
  }
- if((fusion||item).coverOnPlant)created.cover=(fusion||item).coverOnPlant;
+ if((fusion||item).coverOnPlant)created.cover=Math.max(created.cover,(fusion||item).coverOnPlant);
  s.grid[row][col]=created;s.sun-=price;s.cooldowns[id]=selected.cooldown??14;s.lastPlanted=id;
  const {x,y}=center(row,col);particles(s,x,y-26,fusion?'#ffe17a':'#d0ef84',fusion?22:8);
  if((fusion||item).onPlantRowFire)for(let rr=Math.max(0,row-1);rr<=Math.min(4,row+1);rr++)rowFire(s,rr,300);
@@ -181,12 +202,20 @@ function boom(s,x,y,damage,radius){
  for(const z of s.zombies)if(!z.dead&&Math.hypot(z.x-x,(z.y-y)*1.22)<radius*BOARD.cw){z.hp-=damage;}
  particles(s,x,y,'#fcb04e',28);s.shake=12;
 }
+function leavePumpkinShell(s,r,c,p){
+ // Digging up or consuming the inner plant leaves the protective pumpkin intact.
+ if(p.pumpkinShell&&p.cover>0&&!s.craters.some(k=>k.row===r&&k.col===c&&k.life>0)){
+  const shell=createPlant('pumpkin');
+  shell.hp=Math.min(p.cover,shell.maxHp);
+  s.grid[r][c]=shell;
+ }else s.grid[r][c]=null;
+}
 function removePlant(s,r,c,p){
  const {x,y}=center(r,c),spec=getPlant(p.id);
  if(spec.sunOnDeath)addSun(s,x,y-23,spec.sunOnDeath);
  if(spec.onDeathExplosion)boom(s,x,y,spec.onDeathExplosion.damage,spec.onDeathExplosion.radius);
  if(spec.deathRowFire)rowFire(s,r,600);
- particles(s,x,y,'#c4dc88',10);s.grid[r][c]=null;
+ particles(s,x,y,'#c4dc88',10);leavePumpkinShell(s,r,c,p);
 }
 function shoot(s,p,spec,row,col){
  const {x,y}=center(row,col),count=spec.shots||1;
@@ -287,7 +316,7 @@ function updatePlant(s,p,r,c,dt){
  if(spec.growAfter&&p.age>spec.growAfter)p.grown=true;
  if(spec.tangle){
   const victim=s.zombies.find(z=>!z.charmed&&z.hp>0&&z.row===r&&Math.abs(z.x-x)<spec.tangle.range*BOARD.cw);
-  if(victim){victim.hp-=spec.tangle.damage;s.grid[r][c]=null;particles(s,x,y,'#73d9ce',14);return;}
+  if(victim){victim.hp-=spec.tangle.damage;leavePumpkinShell(s,r,c,p);particles(s,x,y,'#73d9ce',14);return;}
  }
  if(spec.gloom){
   p.gloomTimer=(p.gloomTimer??0)-dt;
@@ -339,7 +368,7 @@ function updatePlant(s,p,r,c,dt){
  if(spec.proximityDoom){
   if(s.zombies.some(z=>!z.charmed&&z.hp>0&&z.row===r&&Math.abs(z.x-x)<BOARD.cw)){
    boom(s,x,y,spec.proximityDoom.damage,spec.proximityDoom.radius);
-   s.grid[r][c]=null;return;
+   leavePumpkinShell(s,r,c,p);return;
   }
  }
  if(spec.miniSquash){
@@ -380,14 +409,14 @@ function updatePlant(s,p,r,c,dt){
        for(const z of s.zombies)if(z.airborne){z.hp=0;particles(s,z.x,z.y-108,'#baf1f6',22);}
        s.windLeft=2.5;particles(s,x,y-40,'#aee9e7',26);
      }
-     particles(s,x,y,'#b5eef7',24);s.grid[r][c]=null;return;
+     particles(s,x,y,'#b5eef7',24);leavePumpkinShell(s,r,c,p);return;
    }
  }
  if(spec.squash){
    const enemy=s.zombies.find(z=>z.hp>0&&z.row===r&&Math.abs(z.x-x)<spec.squash.range*BOARD.cw);
    if(enemy){p.squashWindup+=dt;if(p.squashWindup>.55){boom(s,enemy.x,y,spec.squash.damage,spec.squash.radius);
      if(spec.sunOnExplode)addSun(s,x,y-38,spec.sunOnExplode);
-     s.grid[r][c]=null;return;}}
+     leavePumpkinShell(s,r,c,p);return;}}
    else p.squashWindup=0;
  }
  if(spec.spike){
@@ -405,7 +434,7 @@ function updatePlant(s,p,r,c,dt){
     const within=s.zombies.filter(z=>Math.hypot(z.x-x,(z.y-y)*1.22)<spec.explosion.radius*BOARD.cw);
     for(const z of within)addSun(s,z.x,z.y-55,spec.explosion.sunOnHit);
    }
-   s.grid[r][c]=null;return;
+   leavePumpkinShell(s,r,c,p);return;
   }
  }
  if(spec.mine&&p.age>=spec.mine.arm){
@@ -421,7 +450,7 @@ function updatePlant(s,p,r,c,dt){
     }
    }
    if(spec.sunOnExplode)addSun(s,x,y-40,spec.sunOnExplode);
-   s.grid[r][c]=null;return;
+   leavePumpkinShell(s,r,c,p);return;
   }
  }
  if(spec.chomp){
@@ -528,7 +557,7 @@ function advanceZombies(s,dt){
   const plant=c>=0&&c<9?s.grid[z.row][c]:null;
   const px=BOARD.x+(c+.5)*BOARD.cw;
   if(z.frozen>0)continue;
-  if(plant&&!getPlant(plant.id)?.low&&!z.airborne&&Math.abs(z.x-px)<49){
+  if(plant&&(!getPlant(plant.id)?.low||(plant.pumpkinShell&&plant.cover>0))&&!z.airborne&&Math.abs(z.x-px)<49){
    z.eating=true;z.biting-=dt;
    if(z.biting<=0){
     const spec=getPlant(plant.id);

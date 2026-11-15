@@ -18,6 +18,7 @@ function worldPlant(p){
   if(typeof base[key]==='number'){
    base[key]=number(p[key],base[key],0,1e8);
   }else if(typeof base[key]==='string'&&typeof p[key]==='string')base[key]=p[key];
+  else if(typeof base[key]==='boolean')base[key]=p[key]===true;
  }
  base.hp=number(p.hp,base.hp,1,base.maxHp);
  // Advanced fusion shields can exceed the classic pumpkin's 4000 HP.
